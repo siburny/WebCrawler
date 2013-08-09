@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema id="CrawlerDataSet" targetNamespace="http://tempuri.org/UrlDataSet.xsd" xmlns:mstns="http://tempuri.org/UrlDataSet.xsd" xmlns="http://tempuri.org/UrlDataSet.xsd" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" xmlns:msprop="urn:schemas-microsoft-com:xml-msprop" attributeFormDefault="qualified" elementFormDefault="qualified">
+  <xs:annotation>
+    <xs:appinfo source="urn:schemas-microsoft-com:xml-msdatasource">
+      <DataSource DefaultConnectionIndex="0" FunctionsComponentName="QueriesTableAdapter" Modifier="AutoLayout, AnsiClass, Class, Public" SchemaSerializationMode="IncludeSchema" xmlns="urn:schemas-microsoft-com:xml-msdatasource">
+        <Connections />
+        <Tables />
+        <Sources />
+      </DataSource>
+    </xs:appinfo>
+  </xs:annotation>
+  <xs:element name="CrawlerDataSet" msdata:IsDataSet="true" msdata:UseCurrentLocale="true" msprop:Generator_UserDSName="CrawlerDataSet" msprop:Generator_DataSetName="CrawlerDataSet" msprop:EnableTableAdapterManager="true">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="Urls" msprop:Generator_UserTableName="Urls" msprop:Generator_RowDeletedName="UrlsRowDeleted" msprop:Generator_RowChangedName="UrlsRowChanged" msprop:Generator_RowClassName="UrlsRow" msprop:Generator_RowChangingName="UrlsRowChanging" msprop:Generator_RowEvArgName="UrlsRowChangeEvent" msprop:Generator_RowEvHandlerName="UrlsRowChangeEventHandler" msprop:Generator_TableClassName="UrlsDataTable" msprop:Generator_TableVarName="tableUrls" msprop:Generator_RowDeletingName="UrlsRowDeleting" msprop:Generator_TablePropName="Urls">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="ID" msdata:AutoIncrement="true" msprop:Generator_UserColumnName="ID" msprop:Generator_ColumnVarNameInTable="columnID" msprop:Generator_ColumnPropNameInRow="ID" msprop:Generator_ColumnPropNameInTable="IDColumn" type="xs:int" />
+              <xs:element name="Status" msprop:Generator_UserColumnName="Status" msprop:Generator_ColumnVarNameInTable="columnStatus" msprop:Generator_ColumnPropNameInRow="Status" msprop:Generator_ColumnPropNameInTable="StatusColumn" type="xs:string" default="" />
+              <xs:element name="Url" msprop:Generator_UserColumnName="Url" msprop:Generator_ColumnPropNameInRow="Url" msprop:Generator_ColumnVarNameInTable="columnUrl" msprop:Generator_ColumnPropNameInTable="UrlColumn" type="xs:string" default="" />
+              <xs:element name="Mime_x0020_Type" msprop:Generator_UserColumnName="Mime Type" msprop:Generator_ColumnPropNameInRow="Mime_Type" msprop:Generator_ColumnVarNameInTable="columnMime_Type" msprop:Generator_ColumnPropNameInTable="Mime_TypeColumn" type="xs:string" default="" />
+              <xs:element name="Content_x0020_Length" msprop:Generator_UserColumnName="Content Length" msprop:Generator_ColumnPropNameInRow="Content_Length" msprop:Generator_ColumnVarNameInTable="columnContent_Length" msprop:Generator_ColumnPropNameInTable="Content_LengthColumn" type="xs:int" default="0" />
+              <xs:element name="Notes" msprop:Generator_UserColumnName="Notes" msprop:Generator_ColumnPropNameInRow="Notes" msprop:Generator_ColumnVarNameInTable="columnNotes" msprop:Generator_ColumnPropNameInTable="NotesColumn" type="xs:string" default="" />
+              <xs:element name="Depth" msprop:Generator_UserColumnName="Depth" msprop:Generator_ColumnVarNameInTable="columnDepth" msprop:Generator_ColumnPropNameInRow="Depth" msprop:Generator_ColumnPropNameInTable="DepthColumn" type="xs:int" default="0" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:choice>
+    </xs:complexType>
+    <xs:unique name="Constraint1" msdata:PrimaryKey="true">
+      <xs:selector xpath=".//mstns:Urls" />
+      <xs:field xpath="mstns:ID" />
+    </xs:unique>
+  </xs:element>
+</xs:schema>
