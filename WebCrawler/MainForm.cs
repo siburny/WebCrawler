@@ -17,10 +17,15 @@ namespace WebCrawler
 		private Hashtable urlLinksFrom = new Hashtable();
 		private static ChildThread[] childProcesses;
 		private static int numProcesses = 5;
+		private URLCollection collection = new URLCollection();
+		private BindingSource source = new BindingSource();
 
 		public MainForm()
 		{
 			InitializeComponent();
+
+			source.DataSource = collection.Collection;
+			urlDataGridView.DataSource = source;
 		}
 
 		private void toolStripButtonPlay_Click(object sender, EventArgs e)
@@ -34,7 +39,7 @@ namespace WebCrawler
 				toolStripButtonStop.Enabled = true;
 				checkButton.Enabled = false;
 
-				urlDataSet.Urls.Rows.Add(new object[] { null, "", urlTextBox.Text });
+				collection.Add(urlTextBox.Text);
 
 				Start();
 			}
@@ -66,30 +71,27 @@ namespace WebCrawler
 				Settings.Instance.Save();
 		}
 
-		private bool IsDone()
-		{
-			Monitor.Enter(urlDataSet.Urls);
-			for (int i = 0; i < urlDataSet.Urls.Rows.Count; i++)
-			{
-				if (urlDataSet.Urls.Rows[i][1].ToString() != "Done" && urlDataSet.Urls.Rows[i][1].ToString() != "Skipped" && urlDataSet.Urls.Rows[i][1].ToString() != "Error" && urlDataSet.Urls.Rows[i][1].ToString() != "Excluded")
-				{
-					Monitor.Exit(urlDataSet.Urls);
-					return false;
-				}
-			}
-			Monitor.Exit(urlDataSet.Urls);
-
-			return true;
-		}
-		
 		private void refreshTimer_Tick(object sender, EventArgs e)
 		{
-			if (crawling && IsDone())
+			if (crawling && collection.IsAllDone())
 			{
 				toolStripButtonStop_Click(this, null);
 			}
 
-			this.Text = "Number of URLs: " + urlDataSet.Urls.Rows.Count.ToString();
+			this.Text = "Number of URLs: " + collection.Count.ToString();
+			if(collection.IsDirty)
+			{
+				collection.IsDirty = false;
+
+				int rowIndex = urlDataGridView.FirstDisplayedScrollingRowIndex;
+				source.ResetBindings(false);
+				if(rowIndex != -1)
+					urlDataGridView.FirstDisplayedScrollingRowIndex = rowIndex; 
+				
+				//urlDataGridView.Refresh();
+				//urlDataGridView.DataSource = null;
+				//urlDataGridView.DataSource = collection.Collection;
+			}
 		}
 
 		private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -146,10 +148,10 @@ namespace WebCrawler
 		private void toolStripButtonShowOnlyErrors_Click(object sender, EventArgs e)
 		{
 			// Filter to show only errors
-			if (toolStripButtonShowOnlyErrors.Checked)
+			/*if (toolStripButtonShowOnlyErrors.Checked)
 				urlDataSet.Urls.DefaultView.RowFilter = "Status = 'Error'";
 			else
-				urlDataSet.Urls.DefaultView.RowFilter = "";
+				urlDataSet.Urls.DefaultView.RowFilter = "";*/
 		}
 
 		private void Start()
@@ -157,7 +159,7 @@ namespace WebCrawler
 			childProcesses = new ChildThread[numProcesses];
 			for (int i = 0; i < numProcesses; i++)
 			{
-				childProcesses[i] = new ChildThread(this, urlLinksTo, urlLinksFrom);
+				childProcesses[i] = new ChildThread(collection);
 				childProcesses[i].Start();
 				Thread.Sleep(100);
 			}
@@ -179,7 +181,7 @@ namespace WebCrawler
 			}
 		}
 
-		private delegate void AddDataSkippedCallback(string url, int depth);
+		/*private delegate void AddDataSkippedCallback(string url, int depth);
 		public void AddDataSkipped(string url, int depth)
 		{
 			if (InvokeRequired)
@@ -267,7 +269,7 @@ namespace WebCrawler
 
 			Monitor.Exit(urlDataSet.Urls);
 			return -1;
-		}
+		}*/
 
 		private void urlTextBox_KeyDown(object sender, KeyEventArgs e)
 		{

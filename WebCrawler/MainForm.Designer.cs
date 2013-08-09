@@ -40,7 +40,6 @@
 			this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
 			this.toolStripButtonShowOnlyErrors = new System.Windows.Forms.ToolStripButton();
 			this.urlDataGridView = new System.Windows.Forms.DataGridView();
-			this.urlDataSet = new WebCrawler.CrawlerDataSet();
 			this.refreshTimer = new System.Windows.Forms.Timer(this.components);
 			this.panel1 = new System.Windows.Forms.Panel();
 			this.checkButton = new System.Windows.Forms.Button();
@@ -57,7 +56,6 @@
 			this.notesDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
 			this.mainToolStrip.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.urlDataGridView)).BeginInit();
-			((System.ComponentModel.ISupportInitialize)(this.urlDataSet)).BeginInit();
 			this.panel1.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -128,7 +126,6 @@
 			this.urlDataGridView.AllowUserToAddRows = false;
 			this.urlDataGridView.AllowUserToDeleteRows = false;
 			this.urlDataGridView.AllowUserToResizeRows = false;
-			this.urlDataGridView.AutoGenerateColumns = false;
 			this.urlDataGridView.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.SingleHorizontal;
 			dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
 			dataGridViewCellStyle1.BackColor = System.Drawing.SystemColors.Control;
@@ -148,7 +145,6 @@
             this.mimeTypeDataGridViewTextBoxColumn,
             this.contentLengthDataGridViewTextBoxColumn,
             this.notesDataGridViewTextBoxColumn});
-			this.urlDataGridView.DataSource = this.urlDataSet.Urls;
 			dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
 			dataGridViewCellStyle2.BackColor = System.Drawing.SystemColors.Window;
 			dataGridViewCellStyle2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -177,13 +173,8 @@
 			this.urlDataGridView.Size = new System.Drawing.Size(1262, 527);
 			this.urlDataGridView.TabIndex = 1;
 			this.urlDataGridView.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.urlDataGridView_CellDoubleClick);
-			this.urlDataGridView.RowPrePaint += new System.Windows.Forms.DataGridViewRowPrePaintEventHandler(this.urlDataGridView_RowPrePaint);
 			this.urlDataGridView.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.urlDataGridView_CellFormatting);
-			// 
-			// urlDataSet
-			// 
-			this.urlDataSet.DataSetName = "UrlDataSet";
-			this.urlDataSet.SchemaSerializationMode = System.Data.SchemaSerializationMode.IncludeSchema;
+			this.urlDataGridView.RowPrePaint += new System.Windows.Forms.DataGridViewRowPrePaintEventHandler(this.urlDataGridView_RowPrePaint);
 			// 
 			// refreshTimer
 			// 
@@ -226,8 +217,8 @@
 			// 
 			// urlTextBox
 			// 
-			this.urlTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-									| System.Windows.Forms.AnchorStyles.Right)));
+			this.urlTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.urlTextBox.Location = new System.Drawing.Point(50, 3);
 			this.urlTextBox.Name = "urlTextBox";
 			this.urlTextBox.Size = new System.Drawing.Size(1083, 20);
@@ -255,7 +246,7 @@
 			// 
 			// idDataGridViewTextBoxColumn
 			// 
-			this.idDataGridViewTextBoxColumn.DataPropertyName = "ID";
+			this.idDataGridViewTextBoxColumn.DataPropertyName = "Id";
 			this.idDataGridViewTextBoxColumn.HeaderText = "ID";
 			this.idDataGridViewTextBoxColumn.Name = "idDataGridViewTextBoxColumn";
 			this.idDataGridViewTextBoxColumn.ReadOnly = true;
@@ -285,7 +276,7 @@
 			// 
 			// mimeTypeDataGridViewTextBoxColumn
 			// 
-			this.mimeTypeDataGridViewTextBoxColumn.DataPropertyName = "Mime Type";
+			this.mimeTypeDataGridViewTextBoxColumn.DataPropertyName = "MimeType";
 			this.mimeTypeDataGridViewTextBoxColumn.HeaderText = "Mime Type";
 			this.mimeTypeDataGridViewTextBoxColumn.Name = "mimeTypeDataGridViewTextBoxColumn";
 			this.mimeTypeDataGridViewTextBoxColumn.ReadOnly = true;
@@ -293,11 +284,11 @@
 			// contentLengthDataGridViewTextBoxColumn
 			// 
 			this.contentLengthDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.ColumnHeader;
-			this.contentLengthDataGridViewTextBoxColumn.DataPropertyName = "Content Length";
+			this.contentLengthDataGridViewTextBoxColumn.DataPropertyName = "ContentLength";
 			this.contentLengthDataGridViewTextBoxColumn.HeaderText = "Content Length";
 			this.contentLengthDataGridViewTextBoxColumn.Name = "contentLengthDataGridViewTextBoxColumn";
 			this.contentLengthDataGridViewTextBoxColumn.ReadOnly = true;
-			this.contentLengthDataGridViewTextBoxColumn.Width = 95;
+			this.contentLengthDataGridViewTextBoxColumn.Width = 96;
 			// 
 			// notesDataGridViewTextBoxColumn
 			// 
@@ -316,12 +307,11 @@
 			this.Controls.Add(this.mainToolStrip);
 			this.Name = "MainForm";
 			this.Text = "Web Crawler";
-			this.Load += new System.EventHandler(this.MainForm_Load);
 			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
+			this.Load += new System.EventHandler(this.MainForm_Load);
 			this.mainToolStrip.ResumeLayout(false);
 			this.mainToolStrip.PerformLayout();
 			((System.ComponentModel.ISupportInitialize)(this.urlDataGridView)).EndInit();
-			((System.ComponentModel.ISupportInitialize)(this.urlDataSet)).EndInit();
 			this.panel1.ResumeLayout(false);
 			this.panel1.PerformLayout();
 			this.ResumeLayout(false);
@@ -336,7 +326,6 @@
 		private System.Windows.Forms.ToolStripButton toolStripButtonPause;
 		private System.Windows.Forms.ToolStripButton toolStripButtonStop;
 		private System.Windows.Forms.DataGridView urlDataGridView;
-		private CrawlerDataSet urlDataSet;
 		private System.Windows.Forms.Timer refreshTimer;
 		private System.Windows.Forms.Panel panel1;
 		private System.Windows.Forms.Button checkButton;

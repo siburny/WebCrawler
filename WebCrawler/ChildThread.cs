@@ -15,13 +15,9 @@ namespace WebCrawler
 	{
 		private const int maximumDepth = 5;
 		private Thread childThread;
-		private int urlRowNumber;
 		private int currentDepth;
 		private Uri startingUri;
-		private MainForm frm;
-
-		private Hashtable urlLinksTo;
-		private Hashtable urlLinksFrom;
+		private URLCollection collection;
 
 		public bool isRunning
 		{
@@ -31,12 +27,10 @@ namespace WebCrawler
 			}
 		}
 
-		public ChildThread(MainForm _frm, Hashtable _urlLinksTo, Hashtable _urlLinksFrom)
+		public ChildThread(URLCollection _collection)
 		{
-			urlLinksTo = _urlLinksTo;
-			urlLinksFrom = _urlLinksFrom;
-			frm = _frm;
-			startingUri = new Uri(frm.GetData(0, 2));
+			collection = _collection;
+			startingUri = new Uri(collection.GetStatingURL());
 			this.childThread = new Thread(new ThreadStart(ChildThreadProcess));
 			this.childThread.Name = "Child Process";
 		}
@@ -52,44 +46,6 @@ namespace WebCrawler
 			this.childThread.Abort();
 		}
 
-		private void AddUrlSkipped(string url)
-		{
-			if (frm.FindData(2, url) == -1)
-			{
-				frm.AddDataSkipped(url, currentDepth + 1);
-
-				if (!urlLinksTo.ContainsKey(frm.GetData(urlRowNumber, 2)))
-					urlLinksTo[frm.GetData(urlRowNumber, 2)] = new ArrayList();
-				(urlLinksTo[frm.GetData(urlRowNumber, 2)] as ArrayList).Add(url);
-
-				if (!urlLinksFrom.ContainsKey(url))
-					urlLinksFrom[url] = new ArrayList();
-				(urlLinksFrom[url] as ArrayList).Add(frm.GetData(urlRowNumber, 2));
-			}
-		}
-
-		private void AddUrl(string url, bool external)
-		{
-			AddUrl(url, external, true);
-		}
-
-		private void AddUrl(string url, bool external, bool godeeper)
-		{
-			if (frm.FindData(2, url) == -1)
-			{
-				frm.AddData(url, external, currentDepth + (godeeper ? 1 : 0));
-			}
-
-			if (!urlLinksTo.ContainsKey(frm.GetData(urlRowNumber, 2)))
-				urlLinksTo[frm.GetData(urlRowNumber, 2)] = new ArrayList();
-			(urlLinksTo[frm.GetData(urlRowNumber, 2)] as ArrayList).Add(url);
-
-			if (!urlLinksFrom.ContainsKey(url))
-				urlLinksFrom[url] = new ArrayList();
-			(urlLinksFrom[url] as ArrayList).Add(frm.GetData(urlRowNumber, 2));
-
-		}
-
 		public void ChildThreadProcess()
 		{
 			Uri urlCheck;
@@ -100,21 +56,17 @@ namespace WebCrawler
 				// Reset vars
 				buffer = "";
 				currentDepth = -1;
-				urlRowNumber = frm.FindDataAndSet(1, "", "Downloading");
-
-				//System.Diagnostics.Trace.WriteLine("Found: " + urlRowNumber.ToString());
+				URL url = collection.GetNext();
 
 				// if nothing to check, wait
-				if (urlRowNumber == -1)
+				if (url == null)
 				{
 					Thread.Sleep(1000);
 					continue;
 				}
 
-				urlCheck = new Uri(frm.GetData(urlRowNumber, 2));
-
-				// set current depth
-				currentDepth = Int32.Parse(frm.GetData(urlRowNumber, 6));
+				urlCheck = new Uri(url.Url);
+				currentDepth = url.Depth;
 
 				try
 				{
@@ -124,58 +76,57 @@ namespace WebCrawler
 					WebResponse response;
 					response = request.GetResponse();
 
-					frm.ChangeData(urlRowNumber, 3, response.ContentType);
-					frm.ChangeData(urlRowNumber, 4, response.ContentLength);
+					url.MimeType = response.ContentType;
+					url.ContentLength = response.ContentLength;
 
-					if (response.ResponseUri.ToString() != urlCheck.ToString())
+					if(response.ResponseUri.ToString() != urlCheck.ToString())
 					{
-						frm.ChangeData(urlRowNumber, 1, "Redirected to " + response.ResponseUri.ToString());
-						if (startingUri.IsBaseOf(response.ResponseUri))
-							AddUrl(response.ResponseUri.ToString(), false, false);
+						url.Notes = "Redirected to " + response.ResponseUri.ToString();
+						if(startingUri.IsBaseOf(response.ResponseUri))
+							collection.Add(response.ResponseUri.ToString(), currentDepth + 1, "Redirected");
 						else
-							AddUrl(response.ResponseUri.ToString(), true, false);
+							collection.Add(response.ResponseUri.ToString(), currentDepth + 1, "External");
 					}
-					else if (Filter.IsExcluded(response.ResponseUri.ToString()))
+					else if(Filter.IsExcluded(response.ResponseUri.ToString()))
 					{
-						frm.AddDataSkipped(response.ResponseUri.ToString(), currentDepth + 1);
+						collection.Add(response.ResponseUri.ToString(), currentDepth + 1, "Skipped");
 					}
-					else if (Filter.IsMimeSupported(response.ContentType) && currentDepth < maximumDepth)
+					else if(Filter.IsMimeSupported(response.ContentType) && currentDepth < maximumDepth)
 					{
 						StreamReader readStream = new StreamReader(response.GetResponseStream());
 						buffer = readStream.ReadToEnd();
 						readStream.Close();
 
-						frm.ChangeData(urlRowNumber, 1, "Parsing");
+						url.Status = "Parsing";
+						collection.IsDirty = true;
 
 						ArrayList links = Parser.Parse(buffer);
 
 						//add new links
-						for (int i = 0; i < links.Count; i++)
+						for(int i = 0; i < links.Count; i++)
 						{
 							string tempurl = HttpUtility.HtmlDecode(links[i].ToString());
 
-							//System.Diagnostics.Trace.WriteLineIf(currentDepth == 0, tempurl);
-
-							if (!Filter.IsValid(tempurl))
+							if(!Filter.IsValid(tempurl))
 								continue;
 
 							Uri temp = new Uri(tempurl, UriKind.RelativeOrAbsolute);
 
-							if (temp.IsAbsoluteUri)
+							if(temp.IsAbsoluteUri)
 							{
-								if (startingUri.IsBaseOf(temp))
-									AddUrl(tempurl, false);
+								if(startingUri.IsBaseOf(temp))
+									collection.Add(tempurl, currentDepth + 1);
 								else
-									AddUrl(tempurl, true);
+									collection.Add(tempurl, currentDepth + 1, "External");
 							}
 							else
 							{
 								Uri.TryCreate(startingUri, temp, out temp);
 
-								if (temp != null && startingUri.IsBaseOf(temp))
-								{
-									AddUrl(temp.AbsoluteUri.ToString(), false);
-								}
+								if(temp != null && startingUri.IsBaseOf(temp))
+									collection.Add(temp.AbsoluteUri.ToString(), currentDepth + 1);
+								else
+									collection.Add(tempurl, currentDepth + 1, "Error");
 							}
 						}
 					}
@@ -183,25 +134,28 @@ namespace WebCrawler
 					// close connection
 					response.Close();
 				}
-				catch (WebException e)
+				catch(WebException e)
 				{
-					frm.ChangeData(urlRowNumber, 1, "Error");
-					frm.ChangeData(urlRowNumber, 5, e.Message + Environment.NewLine + "-----------------------------------------------------------" + buffer);
+					url.Status = "Error";
+					url.Notes = e.Message + Environment.NewLine + "-----------------------------------------------------------" + buffer;
+					collection.IsDirty = true;
 
 					Thread.Sleep(100);
 					continue;
 				}
-				catch (Exception e)
+				catch(Exception e)
 				{
-					frm.ChangeData(urlRowNumber, 1, "Error");
-					frm.ChangeData(urlRowNumber, 5, e.Message + Environment.NewLine + "-----------------------------------------------------------" + buffer);
+					url.Status = "Error";
+					url.Notes = e.Message + Environment.NewLine + "-----------------------------------------------------------" + buffer;
+					collection.IsDirty = true;
 
 					Thread.Sleep(100);
 					continue;
 				}
 
 				//Update UI
-				frm.ChangeData(urlRowNumber, 1, "Done");
+				url.Status = "Done";
+				collection.IsDirty = true;
 
 				Application.DoEvents();
 				//Thread.Sleep(5000);
@@ -213,7 +167,7 @@ namespace WebCrawler
 	{
 		public static bool IsExcluded(string url)
 		{
-			for (int i = 0; i < Settings.Instance.excludeRules.Length; i++)
+			for (int i = 0; i < Settings.Instance.excludeRules.Count; i++)
 			{
 				if (url.StartsWith(Settings.Instance.excludeRules[i]))
 					return true;
@@ -237,6 +191,10 @@ namespace WebCrawler
 				return false;
 			else if (url.ToLower().StartsWith("javascript:") || url.ToLower().StartsWith("mailto:"))
 				return false;
+
+			/*Uri uri;
+			if(!Uri.TryCreate(url, UriKind.RelativeOrAbsolute, out uri))
+				return false;*/
 
 			return true;
 		}

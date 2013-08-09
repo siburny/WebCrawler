@@ -17,16 +17,18 @@ namespace WebCrawler
 		private string configPath;
 		public int maxProcesses;
 		public int maxDepth;
-		public string[] excludeRules;
+		public bool warnOnRedirect;
+		public List<string> excludeRules;
 
 		private Settings()
 		{
 			configPath = Application.StartupPath;
 
-			//defaul
+			//default
 			maxProcesses = 5;
 			maxDepth = 5;
-			excludeRules = new string[1] { "http://www.expeditions.com/Request_a_Reservatio77.asp" };
+			excludeRules = new List<string>();
+			warnOnRedirect = false;
 		}
 
 		public void Save()
