@@ -29,7 +29,7 @@ namespace WebCrawler
 
 			if(!_collection.Exists(x => x.Url == url))
 			{
-				_collection.Add(new URL(url, depth));
+				_collection.Add(new URL(url, depth, status));
 				IsDirty = true;
 			}
 
@@ -65,6 +65,8 @@ namespace WebCrawler
 		{
 			_event.WaitOne();
 			URL temp = _collection.Where(x => x.Status == "").FirstOrDefault();
+			if (temp != null)
+				temp.Status = "Downloading";
 			_event.Set();
 			return temp;
 		}

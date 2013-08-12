@@ -85,12 +85,12 @@ namespace WebCrawler
 
 				int rowIndex = urlDataGridView.FirstDisplayedScrollingRowIndex;
 				source.ResetBindings(false);
-				if(rowIndex != -1)
+				//urlDataGridView.DataSource = null;
+				//urlDataGridView.DataSource = collection.Collection;
+				if (rowIndex != -1)
 					urlDataGridView.FirstDisplayedScrollingRowIndex = rowIndex; 
 				
 				//urlDataGridView.Refresh();
-				//urlDataGridView.DataSource = null;
-				//urlDataGridView.DataSource = collection.Collection;
 			}
 		}
 
@@ -106,6 +106,7 @@ namespace WebCrawler
 		{
 			if (urlDataGridView.Columns[e.ColumnIndex].Name.Equals("statusDataGridViewImageColumn"))
 			{
+				URL url = collection.Collection[e.
 				if (urlDataGridView.Rows[e.RowIndex].Cells[7].Value != null && urlDataGridView.Rows[e.RowIndex].Cells[7].Value.ToString().StartsWith("Redirected"))
 					e.Value = statusImageList.Images["redirect"];
 				else if (urlDataGridView.Rows[e.RowIndex].Cells[7].Value != null && urlDataGridView.Rows[e.RowIndex].Cells[7].Value.ToString().StartsWith("External"))
@@ -123,9 +124,6 @@ namespace WebCrawler
 			{
 				switch (urlDataGridView.Rows[e.RowIndex].Cells[2].Value.ToString())
 				{
-					case "":
-						urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Orange;
-						break;
 					case "Error":
 						urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Red;
 						break;
@@ -139,7 +137,7 @@ namespace WebCrawler
 						urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Brown;
 						break;
 					default:
-						urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Green;
+						urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Orange;
 						break;
 				}
 			}
@@ -181,96 +179,6 @@ namespace WebCrawler
 			}
 		}
 
-		/*private delegate void AddDataSkippedCallback(string url, int depth);
-		public void AddDataSkipped(string url, int depth)
-		{
-			if (InvokeRequired)
-			{
-				this.Invoke(new AddDataSkippedCallback(AddDataSkipped), url, depth);
-			}
-			else
-			{
-				Monitor.Enter(urlDataSet.Urls);
-				urlDataSet.Urls.Rows.Add(new object[] { null, "Excluded", url, "", 0, "", depth });
-				Monitor.Exit(urlDataSet.Urls);
-			}
-		}
-
-		private delegate void AddDataCallback(string url, bool external, int depth);
-		public void AddData(string url, bool external, int depth)
-		{
-			if (InvokeRequired)
-			{
-				this.Invoke(new AddDataCallback(AddData), url, external, depth);
-			}
-			else
-			{
-				Monitor.Enter(urlDataSet.Urls);
-				urlDataSet.Urls.Rows.Add(new object[] { null, external ? "Skipped" : "", url, "", 0, external ? "External" : "", depth });
-				Monitor.Exit(urlDataSet.Urls);
-			}
-		}
-
-		private delegate void ChangeDataCallback(int row, int column, object data);
-		public void ChangeData(int row, int column, object data)
-		{
-			try
-			{
-				if (InvokeRequired)
-				{
-					this.Invoke(new ChangeDataCallback(ChangeData), row, column, data);
-				}
-				else
-				{
-					Monitor.Enter(urlDataSet.Urls);
-					if (urlDataSet.Urls != null && urlDataSet.Urls.Rows[row] != null)
-						urlDataSet.Urls.Rows[row][column] = data;
-					Monitor.Exit(urlDataSet.Urls);
-				}
-			}
-			catch (ObjectDisposedException)
-			{
-			}
-		}
-
-		public string GetData(int row, int column)
-		{
-			return urlDataSet.Urls.Rows[row][column].ToString();
-		}
-
-		public int FindData(int col, string data)
-		{
-			Monitor.Enter(urlDataSet.Urls);
-			for (int i = 0; i < urlDataSet.Urls.Rows.Count; i++)
-			{
-				if (urlDataSet.Urls.Rows[i][col].ToString() == data)
-				{
-					Monitor.Exit(urlDataSet.Urls);
-					return i;
-				}
-			}
-
-			Monitor.Exit(urlDataSet.Urls);
-			return -1;
-		}
-
-		public int FindDataAndSet(int col, string data, string data2)
-		{
-			Monitor.Enter(urlDataSet.Urls);
-			for (int i = 0; i < urlDataSet.Urls.Rows.Count; i++)
-			{
-				if (urlDataSet.Urls.Rows[i][col].ToString() == data)
-				{
-					urlDataSet.Urls.Rows[i][col] = data2;
-					Monitor.Exit(urlDataSet.Urls);
-					return i;
-				}
-			}
-
-			Monitor.Exit(urlDataSet.Urls);
-			return -1;
-		}*/
-
 		private void urlTextBox_KeyDown(object sender, KeyEventArgs e)
 		{
 			if (e.KeyCode == Keys.Enter)
@@ -279,6 +187,5 @@ namespace WebCrawler
 				e.Handled = true;
 			}
 		}
-
 	}
 }

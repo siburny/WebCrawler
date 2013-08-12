@@ -53,6 +53,7 @@
 			this.urlDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
 			this.mimeTypeDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
 			this.contentLengthDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+			this.TimeTaken = new System.Windows.Forms.DataGridViewTextBoxColumn();
 			this.notesDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
 			this.mainToolStrip.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.urlDataGridView)).BeginInit();
@@ -144,6 +145,7 @@
             this.urlDataGridViewTextBoxColumn,
             this.mimeTypeDataGridViewTextBoxColumn,
             this.contentLengthDataGridViewTextBoxColumn,
+            this.TimeTaken,
             this.notesDataGridViewTextBoxColumn});
 			dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
 			dataGridViewCellStyle2.BackColor = System.Drawing.SystemColors.Window;
@@ -290,6 +292,13 @@
 			this.contentLengthDataGridViewTextBoxColumn.ReadOnly = true;
 			this.contentLengthDataGridViewTextBoxColumn.Width = 96;
 			// 
+			// TimeTaken
+			// 
+			this.TimeTaken.DataPropertyName = "TimeTaken";
+			this.TimeTaken.HeaderText = "Time Taken";
+			this.TimeTaken.Name = "TimeTaken";
+			this.TimeTaken.ReadOnly = true;
+			// 
 			// notesDataGridViewTextBoxColumn
 			// 
 			this.notesDataGridViewTextBoxColumn.DataPropertyName = "Notes";
@@ -341,6 +350,7 @@
 		private System.Windows.Forms.DataGridViewTextBoxColumn urlDataGridViewTextBoxColumn;
 		private System.Windows.Forms.DataGridViewTextBoxColumn mimeTypeDataGridViewTextBoxColumn;
 		private System.Windows.Forms.DataGridViewTextBoxColumn contentLengthDataGridViewTextBoxColumn;
+		private System.Windows.Forms.DataGridViewTextBoxColumn TimeTaken;
 		private System.Windows.Forms.DataGridViewTextBoxColumn notesDataGridViewTextBoxColumn;
 	}
 }

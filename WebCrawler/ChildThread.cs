@@ -8,16 +8,19 @@ using System.Windows.Forms;
 using System.Threading;
 using System.IO;
 using System.Web;
+using CsQuery;
+using System.Linq;
 
 namespace WebCrawler
 {
 	class ChildThread
 	{
-		private const int maximumDepth = 5;
+		private const int maximumDepth = 1;
 		private Thread childThread;
 		private int currentDepth;
 		private Uri startingUri;
 		private URLCollection collection;
+		private bool stopping = false;
 
 		public bool isRunning
 		{
@@ -43,7 +46,8 @@ namespace WebCrawler
 		public void Stop()
 		{
 			//if (this.childThread.ThreadState == ThreadState.Running)
-			this.childThread.Abort();
+			this.stopping = true;
+			this.childThread.Join(15000);
 		}
 
 		public void ChildThreadProcess()
@@ -53,6 +57,9 @@ namespace WebCrawler
 
 			while (true)
 			{
+				if (this.stopping)
+					break;
+
 				// Reset vars
 				buffer = "";
 				currentDepth = -1;
@@ -73,11 +80,16 @@ namespace WebCrawler
 					WebRequest request = WebRequest.Create(urlCheck);
 					request.Timeout = 15000;
 
-					WebResponse response;
-					response = request.GetResponse();
+					DateTime start = DateTime.Now;
 
+					WebResponse response = request.GetResponse();
 					url.MimeType = response.ContentType;
 					url.ContentLength = response.ContentLength;
+					StreamReader readStream = new StreamReader(response.GetResponseStream());
+					buffer = readStream.ReadToEnd();
+					readStream.Close();
+
+					url.TimeTaken = (DateTime.Now - start).TotalMilliseconds;
 
 					if(response.ResponseUri.ToString() != urlCheck.ToString())
 					{
@@ -93,25 +105,23 @@ namespace WebCrawler
 					}
 					else if(Filter.IsMimeSupported(response.ContentType) && currentDepth < maximumDepth)
 					{
-						StreamReader readStream = new StreamReader(response.GetResponseStream());
-						buffer = readStream.ReadToEnd();
-						readStream.Close();
-
 						url.Status = "Parsing";
 						collection.IsDirty = true;
 
-						ArrayList links = Parser.Parse(buffer);
+						//ArrayList links = Parser.Parse(buffer);
+						List<IDomObject> links = CQ.Create(buffer)["a"].ToList();
 
 						//add new links
-						for(int i = 0; i < links.Count; i++)
+						foreach(IDomObject link in links)
 						{
-							string tempurl = HttpUtility.HtmlDecode(links[i].ToString());
+							if (link.Attributes["href"] == null)
+								continue;
 
+							string tempurl = HttpUtility.HtmlDecode(link.Attributes["href"].ToString());
 							if(!Filter.IsValid(tempurl))
 								continue;
 
 							Uri temp = new Uri(tempurl, UriKind.RelativeOrAbsolute);
-
 							if(temp.IsAbsoluteUri)
 							{
 								if(startingUri.IsBaseOf(temp))
@@ -180,7 +190,7 @@ namespace WebCrawler
 			if (mime.StartsWith("text/"))
 				return true;
 			else if (mime == "application/x-javascript")
-				return true;
+				return false;
 			else
 				return false;
 		}
