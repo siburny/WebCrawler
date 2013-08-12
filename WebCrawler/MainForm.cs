@@ -106,40 +106,39 @@ namespace WebCrawler
 		{
 			if (urlDataGridView.Columns[e.ColumnIndex].Name.Equals("statusDataGridViewImageColumn"))
 			{
-				URL url = collection.Collection[e.
-				if (urlDataGridView.Rows[e.RowIndex].Cells[7].Value != null && urlDataGridView.Rows[e.RowIndex].Cells[7].Value.ToString().StartsWith("Redirected"))
+				URL url = collection.Collection[e.RowIndex];
+
+				if (url.Notes.StartsWith("Redirected"))
 					e.Value = statusImageList.Images["redirect"];
-				else if (urlDataGridView.Rows[e.RowIndex].Cells[7].Value != null && urlDataGridView.Rows[e.RowIndex].Cells[7].Value.ToString().StartsWith("External"))
+				else if (url.Status == "External")
 					e.Value = statusImageList.Images["external"];
-				else if (urlDataGridView.Rows[e.RowIndex].Cells[5].Value != null && urlDataGridView.Rows[e.RowIndex].Cells[6].Value != null && urlDataGridView.Rows[e.RowIndex].Cells[5].Value.ToString() != "" && urlDataGridView.Rows[e.RowIndex].Cells[6].Value.ToString() != "0")
+				else if (url.Status == "Done")
 					e.Value = statusImageList.Images["success"];
-				else if (urlDataGridView.Rows[e.RowIndex].Cells[2].Value != null && urlDataGridView.Rows[e.RowIndex].Cells[2].Value.ToString() == "Error")
+				else if(url.Status.ToString() == "Error")
 					e.Value = statusImageList.Images["failure"];
 			}
 		}
 
 		private void urlDataGridView_RowPrePaint(object sender, DataGridViewRowPrePaintEventArgs e)
 		{
-			if (urlDataGridView.Rows[e.RowIndex].Cells[2].Value != null)
+			URL url = collection.Collection[e.RowIndex];
+			switch(url.Status)
 			{
-				switch (urlDataGridView.Rows[e.RowIndex].Cells[2].Value.ToString())
-				{
-					case "Error":
-						urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Red;
-						break;
-					case "Skipped":
-						urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Blue;
-						break;
-					case "Done":
-						urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Green;
-						break;
-					case "Excluded":
-						urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Brown;
-						break;
-					default:
-						urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Orange;
-						break;
-				}
+				case "Error":
+					urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Red;
+					break;
+				case "External":
+					urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Blue;
+					break;
+				case "Done":
+					urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Green;
+					break;
+				case "Skipped":
+					urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Brown;
+					break;
+				default:
+					urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Orange;
+					break;
 			}
 		}
 

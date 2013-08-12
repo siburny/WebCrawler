@@ -77,7 +77,7 @@ namespace WebCrawler
 
 			foreach(URL url in _collection)
 			{
-				if(url.Status != "Done" && url.Status != "Skipped" && url.Status != "Error" && url.Status != "Excluded")
+				if(url.Status != "Done" && url.Status != "Skipped" && url.Status != "Error" && url.Status != "External" && url.Status != "Redirected")
 				{
 					_event.Set();
 					return false;

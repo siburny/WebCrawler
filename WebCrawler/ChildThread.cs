@@ -77,7 +77,8 @@ namespace WebCrawler
 
 				try
 				{
-					WebRequest request = WebRequest.Create(urlCheck);
+					HttpWebRequest request = HttpWebRequest.Create(urlCheck) as HttpWebRequest;
+					request.AllowAutoRedirect = true;
 					request.Timeout = 15000;
 
 					DateTime start = DateTime.Now;
@@ -95,9 +96,9 @@ namespace WebCrawler
 					{
 						url.Notes = "Redirected to " + response.ResponseUri.ToString();
 						if(startingUri.IsBaseOf(response.ResponseUri))
-							collection.Add(response.ResponseUri.ToString(), currentDepth + 1, "Redirected");
+							collection.Add(response.ResponseUri.ToString(), currentDepth);
 						else
-							collection.Add(response.ResponseUri.ToString(), currentDepth + 1, "External");
+							collection.Add(response.ResponseUri.ToString(), currentDepth, "External");
 					}
 					else if(Filter.IsExcluded(response.ResponseUri.ToString()))
 					{
