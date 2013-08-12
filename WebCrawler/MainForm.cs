@@ -16,7 +16,7 @@ namespace WebCrawler
 		private Hashtable urlLinksTo = new Hashtable();
 		private Hashtable urlLinksFrom = new Hashtable();
 		private static ChildThread[] childProcesses;
-		private static int numProcesses = 5;
+		private static int numProcesses = Settings.Instance.MaxProcesses;
 		private URLCollection collection = new URLCollection();
 		private BindingSource source = new BindingSource();
 
@@ -85,12 +85,8 @@ namespace WebCrawler
 
 				int rowIndex = urlDataGridView.FirstDisplayedScrollingRowIndex;
 				source.ResetBindings(false);
-				//urlDataGridView.DataSource = null;
-				//urlDataGridView.DataSource = collection.Collection;
 				if (rowIndex != -1)
 					urlDataGridView.FirstDisplayedScrollingRowIndex = rowIndex; 
-				
-				//urlDataGridView.Refresh();
 			}
 		}
 
@@ -122,24 +118,27 @@ namespace WebCrawler
 		private void urlDataGridView_RowPrePaint(object sender, DataGridViewRowPrePaintEventArgs e)
 		{
 			URL url = collection.Collection[e.RowIndex];
-			switch(url.Status)
-			{
-				case "Error":
-					urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Red;
-					break;
-				case "External":
-					urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Blue;
-					break;
-				case "Done":
-					urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Green;
-					break;
-				case "Skipped":
-					urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Brown;
-					break;
-				default:
-					urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Orange;
-					break;
-			}
+			if(!url.HighlightColor.IsEmpty)
+				urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = url.HighlightColor;
+			else
+				switch(url.Status)
+				{
+					case "Error":
+						urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Red;
+						break;
+					case "External":
+						urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Blue;
+						break;
+					case "Done":
+						urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Green;
+						break;
+					case "Skipped":
+						urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Brown;
+						break;
+					default:
+						urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Orange;
+						break;
+				}
 		}
 
 		private void toolStripButtonShowOnlyErrors_Click(object sender, EventArgs e)

@@ -55,6 +55,7 @@
 			this.contentLengthDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
 			this.TimeTaken = new System.Windows.Forms.DataGridViewTextBoxColumn();
 			this.notesDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+			this.HighlightColor = new System.Windows.Forms.DataGridViewTextBoxColumn();
 			this.mainToolStrip.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.urlDataGridView)).BeginInit();
 			this.panel1.SuspendLayout();
@@ -146,7 +147,8 @@
             this.mimeTypeDataGridViewTextBoxColumn,
             this.contentLengthDataGridViewTextBoxColumn,
             this.TimeTaken,
-            this.notesDataGridViewTextBoxColumn});
+            this.notesDataGridViewTextBoxColumn,
+            this.HighlightColor});
 			dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
 			dataGridViewCellStyle2.BackColor = System.Drawing.SystemColors.Window;
 			dataGridViewCellStyle2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -306,6 +308,14 @@
 			this.notesDataGridViewTextBoxColumn.Name = "notesDataGridViewTextBoxColumn";
 			this.notesDataGridViewTextBoxColumn.ReadOnly = true;
 			// 
+			// HighlightColor
+			// 
+			this.HighlightColor.DataPropertyName = "HighlightColor";
+			this.HighlightColor.HeaderText = "HighlightColor";
+			this.HighlightColor.Name = "HighlightColor";
+			this.HighlightColor.ReadOnly = true;
+			this.HighlightColor.Visible = false;
+			// 
 			// MainForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -352,6 +362,7 @@
 		private System.Windows.Forms.DataGridViewTextBoxColumn contentLengthDataGridViewTextBoxColumn;
 		private System.Windows.Forms.DataGridViewTextBoxColumn TimeTaken;
 		private System.Windows.Forms.DataGridViewTextBoxColumn notesDataGridViewTextBoxColumn;
+		private System.Windows.Forms.DataGridViewTextBoxColumn HighlightColor;
 	}
 }
 

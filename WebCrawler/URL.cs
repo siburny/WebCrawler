@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 
@@ -15,6 +16,7 @@ namespace WebCrawler
 		public double TimeTaken { get; set; }
 		public string Notes { get; set; }
 		public int Depth { get; set; }
+		public Color HighlightColor { get; set; }
 
 		public URL(string url)
 			: this(url, 0, "")

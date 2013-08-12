@@ -13,27 +13,34 @@ namespace WebCrawler
 
 		public bool IsDirty = false;
 
-		public void Add(string url)
+		public URL Add(string url)
 		{
-			Add(url, 0);
+			return Add(url, 0);
 		}
 
-		public void Add(string url, int depth)
+		public URL Add(string url, int depth)
 		{
-			Add(url, depth, "");
+			return Add(url, depth, "");
 		}
 
-		public void Add(string url, int depth, string status)
+		public URL Add(string url, int depth, string status)
 		{
 			_event.WaitOne();
 
+			URL temp;
 			if(!_collection.Exists(x => x.Url == url))
 			{
-				_collection.Add(new URL(url, depth, status));
+				temp = new URL(url, depth, status);
+				_collection.Add(temp);
 				IsDirty = true;
+			}
+			else
+			{
+				temp = _collection.FirstOrDefault(x => x.Url == url);
 			}
 
 			_event.Set();
+			return temp;
 		}
 
 		public int Count

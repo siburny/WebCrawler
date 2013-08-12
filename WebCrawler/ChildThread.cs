@@ -15,7 +15,7 @@ namespace WebCrawler
 {
 	class ChildThread
 	{
-		private const int maximumDepth = 1;
+		private int maximumDepth = Settings.Instance.MaxDepth;
 		private Thread childThread;
 		private int currentDepth;
 		private Uri startingUri;
@@ -91,6 +91,9 @@ namespace WebCrawler
 					readStream.Close();
 
 					url.TimeTaken = (DateTime.Now - start).TotalMilliseconds;
+					foreach(SettingsHighlightRule rule in Settings.Instance.HighlightRules)
+						if(rule.IsMatch(buffer))
+							url.HighlightColor = rule.GetHighlightColor();
 
 					if(response.ResponseUri.ToString() != urlCheck.ToString())
 					{
@@ -178,9 +181,9 @@ namespace WebCrawler
 	{
 		public static bool IsExcluded(string url)
 		{
-			for (int i = 0; i < Settings.Instance.excludeRules.Count; i++)
+			for (int i = 0; i < Settings.Instance.ExcludeRules.Count; i++)
 			{
-				if (url.StartsWith(Settings.Instance.excludeRules[i]))
+				if (url.StartsWith(Settings.Instance.ExcludeRules[i]))
 					return true;
 			}
 			return false;
