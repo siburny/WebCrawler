@@ -39,7 +39,6 @@
 			this.toolStripButtonPause = new System.Windows.Forms.ToolStripButton();
 			this.toolStripButtonStop = new System.Windows.Forms.ToolStripButton();
 			this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
-			this.toolStripButtonShowOnlyErrors = new System.Windows.Forms.ToolStripButton();
 			this.urlDataGridView = new System.Windows.Forms.DataGridView();
 			this.refreshTimer = new System.Windows.Forms.Timer(this.components);
 			this.panel1 = new System.Windows.Forms.Panel();
@@ -49,6 +48,7 @@
 			this.statusImageList = new System.Windows.Forms.ImageList(this.components);
 			this.statusStripMain = new System.Windows.Forms.StatusStrip();
 			this.toolStripStatusLabelTotalURLs = new System.Windows.Forms.ToolStripStatusLabel();
+			this.toolStripButtonShowNextError = new System.Windows.Forms.ToolStripButton();
 			this.statusDataGridViewImageColumn = new System.Windows.Forms.DataGridViewImageColumn();
 			this.idDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
 			this.statusDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -72,7 +72,7 @@
             this.toolStripButtonPause,
             this.toolStripButtonStop,
             this.toolStripSeparator1,
-            this.toolStripButtonShowOnlyErrors});
+            this.toolStripButtonShowNextError});
 			this.mainToolStrip.Location = new System.Drawing.Point(0, 0);
 			this.mainToolStrip.Name = "mainToolStrip";
 			this.mainToolStrip.Size = new System.Drawing.Size(1167, 25);
@@ -115,17 +115,6 @@
 			// 
 			this.toolStripSeparator1.Name = "toolStripSeparator1";
 			this.toolStripSeparator1.Size = new System.Drawing.Size(6, 25);
-			// 
-			// toolStripButtonShowOnlyErrors
-			// 
-			this.toolStripButtonShowOnlyErrors.CheckOnClick = true;
-			this.toolStripButtonShowOnlyErrors.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-			this.toolStripButtonShowOnlyErrors.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButtonShowOnlyErrors.Image")));
-			this.toolStripButtonShowOnlyErrors.ImageTransparentColor = System.Drawing.Color.Magenta;
-			this.toolStripButtonShowOnlyErrors.Name = "toolStripButtonShowOnlyErrors";
-			this.toolStripButtonShowOnlyErrors.Size = new System.Drawing.Size(23, 22);
-			this.toolStripButtonShowOnlyErrors.Text = "Show Only Errors";
-			this.toolStripButtonShowOnlyErrors.Click += new System.EventHandler(this.toolStripButtonShowOnlyErrors_Click);
 			// 
 			// urlDataGridView
 			// 
@@ -178,10 +167,12 @@
 			this.urlDataGridView.RowTemplate.Height = 18;
 			this.urlDataGridView.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
 			this.urlDataGridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-			this.urlDataGridView.Size = new System.Drawing.Size(1167, 498);
+			this.urlDataGridView.Size = new System.Drawing.Size(1167, 476);
 			this.urlDataGridView.TabIndex = 1;
+			this.urlDataGridView.TabStop = false;
 			this.urlDataGridView.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.urlDataGridView_CellDoubleClick);
 			this.urlDataGridView.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.urlDataGridView_CellFormatting);
+			this.urlDataGridView.DataBindingComplete += new System.Windows.Forms.DataGridViewBindingCompleteEventHandler(this.urlDataGridView_DataBindingComplete);
 			this.urlDataGridView.RowPrePaint += new System.Windows.Forms.DataGridViewRowPrePaintEventHandler(this.urlDataGridView_RowPrePaint);
 			// 
 			// refreshTimer
@@ -258,6 +249,15 @@
 			this.toolStripStatusLabelTotalURLs.Name = "toolStripStatusLabelTotalURLs";
 			this.toolStripStatusLabelTotalURLs.Size = new System.Drawing.Size(0, 17);
 			// 
+			// toolStripButtonShowNextError
+			// 
+			this.toolStripButtonShowNextError.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+			this.toolStripButtonShowNextError.ImageTransparentColor = System.Drawing.Color.Magenta;
+			this.toolStripButtonShowNextError.Name = "toolStripButtonShowNextError";
+			this.toolStripButtonShowNextError.Size = new System.Drawing.Size(95, 22);
+			this.toolStripButtonShowNextError.Text = "Show Next Error";
+			this.toolStripButtonShowNextError.Click += new System.EventHandler(this.toolStripButtonShowNextError_Click);
+			// 
 			// statusDataGridViewImageColumn
 			// 
 			this.statusDataGridViewImageColumn.HeaderText = "Status";
@@ -329,6 +329,7 @@
 			this.notesDataGridViewTextBoxColumn.HeaderText = "Notes";
 			this.notesDataGridViewTextBoxColumn.Name = "notesDataGridViewTextBoxColumn";
 			this.notesDataGridViewTextBoxColumn.ReadOnly = true;
+			this.notesDataGridViewTextBoxColumn.Width = 200;
 			// 
 			// HighlightColor
 			// 
@@ -343,8 +344,8 @@
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1167, 549);
-			this.Controls.Add(this.statusStripMain);
 			this.Controls.Add(this.urlDataGridView);
+			this.Controls.Add(this.statusStripMain);
 			this.Controls.Add(this.panel1);
 			this.Controls.Add(this.mainToolStrip);
 			this.Name = "MainForm";
@@ -377,9 +378,9 @@
 		private System.Windows.Forms.TextBox urlTextBox;
 		private System.Windows.Forms.ImageList statusImageList;
 		private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
-		private System.Windows.Forms.ToolStripButton toolStripButtonShowOnlyErrors;
 		private System.Windows.Forms.StatusStrip statusStripMain;
 		private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabelTotalURLs;
+		private System.Windows.Forms.ToolStripButton toolStripButtonShowNextError;
 		private System.Windows.Forms.DataGridViewImageColumn statusDataGridViewImageColumn;
 		private System.Windows.Forms.DataGridViewTextBoxColumn idDataGridViewTextBoxColumn;
 		private System.Windows.Forms.DataGridViewTextBoxColumn statusDataGridViewTextBoxColumn;

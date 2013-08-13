@@ -100,6 +100,7 @@ namespace WebCrawler
 					if(response.ResponseUri.ToString() != urlCheck.ToString())
 					{
 						url.Notes = "Redirected to " + response.ResponseUri.ToString();
+						url.Status = URLStatus.Redirected;
 						if(startingUri.IsBaseOf(response.ResponseUri))
 							collection.Add(response.ResponseUri.ToString(), currentDepth, url.Url);
 						else
@@ -127,12 +128,10 @@ namespace WebCrawler
 							if(!Filter.IsValid(tempurl))
 								continue;
 
-							url.LinksTo.Add(tempurl);
-
 							Uri temp = new Uri(tempurl, UriKind.RelativeOrAbsolute);
 							if(temp.IsAbsoluteUri)
 							{
-								if(startingUri.IsBaseOf(temp))
+								if (startingUri.IsBaseOf(temp))
 									collection.Add(tempurl, currentDepth + 1, url.Url);
 								else
 									collection.Add(tempurl, currentDepth + 1, url.Url, URLStatus.External);
@@ -146,6 +145,7 @@ namespace WebCrawler
 								else
 									collection.Add(tempurl, currentDepth + 1, url.Url, URLStatus.Error);
 							}
+							url.LinksTo.Add(temp.AbsoluteUri);
 						}
 					}
 

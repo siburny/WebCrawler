@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -8,10 +9,14 @@ namespace WebCrawler
 {
 	public class URLCollection
 	{
-		private List<URL> _collection = new List<URL>();
+		private BindingListInvoked<URL> _collection;
 		private AutoResetEvent _event = new AutoResetEvent(true);
-
 		public bool IsDirty = false;
+
+		public URLCollection(ISynchronizeInvoke invoke)
+		{
+			 _collection = new BindingListInvoked<URL>(invoke);
+		}
 
 		public URL Add(string url)
 		{
@@ -28,7 +33,7 @@ namespace WebCrawler
 			_event.WaitOne();
 
 			URL temp;
-			if(!_collection.Exists(x => x.Url == url))
+			if (_collection.SingleOrDefault(x => x.Url == url) == null)
 			{
 				temp = new URL(url, depth, status);
 				temp.LinksFrom.Add(parent);
@@ -52,7 +57,7 @@ namespace WebCrawler
 			}
 		}
 
-		public List<URL> Collection
+		public BindingListInvoked<URL> Collection
 		{
 			get
 			{
@@ -90,6 +95,29 @@ namespace WebCrawler
 
 			_event.Set();
 			return true;
+		}
+	}
+
+	public class BindingListInvoked<T> : BindingList<T>
+	{
+		private ISynchronizeInvoke _invoke;
+		public BindingListInvoked(ISynchronizeInvoke invoke)
+		{
+			_invoke = invoke;
+		}
+
+		delegate void ListChangedDelegate(ListChangedEventArgs e);
+		protected override void OnListChanged(ListChangedEventArgs e)
+		{
+
+			if ((_invoke != null) && (_invoke.InvokeRequired))
+			{
+				IAsyncResult ar = _invoke.BeginInvoke(new ListChangedDelegate(base.OnListChanged), new object[] { e });
+			}
+			else
+			{
+				base.OnListChanged(e);
+			}
 		}
 	}
 }
