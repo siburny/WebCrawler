@@ -24,17 +24,15 @@ namespace WebCrawler
 			this.Hide();
 		}
 
-		public void ShowInfo(string url, ArrayList linkFrom, ArrayList linkTo)
+		public void ShowInfo(URL url)
 		{
-			txtLink.Text = url;
+			txtLink.Text = url.Url;
 
 			txtLinkFrom.Text = "";
-			if (linkFrom != null)
-				txtLinkFrom.Text = String.Join(Environment.NewLine, (string[])linkFrom.ToArray(typeof(string)));
+			txtLinkFrom.Text = String.Join(Environment.NewLine, url.LinksFrom);
 
 			txtLinkTo.Text = "";
-			if (linkTo != null)
-				txtLinkTo.Text = String.Join(Environment.NewLine, (string[])linkTo.ToArray(typeof(string)));
+			txtLinkTo.Text = String.Join(Environment.NewLine, url.LinksTo);
 
 			this.ShowDialog();
 		}

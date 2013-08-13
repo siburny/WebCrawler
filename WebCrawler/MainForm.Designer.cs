@@ -31,8 +31,9 @@
 			this.components = new System.ComponentModel.Container();
 			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
 			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
-			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
 			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
+			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
+			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
 			this.mainToolStrip = new System.Windows.Forms.ToolStrip();
 			this.toolStripButtonPlay = new System.Windows.Forms.ToolStripButton();
 			this.toolStripButtonPause = new System.Windows.Forms.ToolStripButton();
@@ -46,6 +47,8 @@
 			this.urlLabel = new System.Windows.Forms.Label();
 			this.urlTextBox = new System.Windows.Forms.TextBox();
 			this.statusImageList = new System.Windows.Forms.ImageList(this.components);
+			this.statusStripMain = new System.Windows.Forms.StatusStrip();
+			this.toolStripStatusLabelTotalURLs = new System.Windows.Forms.ToolStripStatusLabel();
 			this.statusDataGridViewImageColumn = new System.Windows.Forms.DataGridViewImageColumn();
 			this.idDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
 			this.statusDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -59,6 +62,7 @@
 			this.mainToolStrip.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.urlDataGridView)).BeginInit();
 			this.panel1.SuspendLayout();
+			this.statusStripMain.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// mainToolStrip
@@ -71,7 +75,7 @@
             this.toolStripButtonShowOnlyErrors});
 			this.mainToolStrip.Location = new System.Drawing.Point(0, 0);
 			this.mainToolStrip.Name = "mainToolStrip";
-			this.mainToolStrip.Size = new System.Drawing.Size(1262, 25);
+			this.mainToolStrip.Size = new System.Drawing.Size(1167, 25);
 			this.mainToolStrip.TabIndex = 0;
 			this.mainToolStrip.Text = "toolStrip1";
 			// 
@@ -149,32 +153,32 @@
             this.TimeTaken,
             this.notesDataGridViewTextBoxColumn,
             this.HighlightColor});
-			dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-			dataGridViewCellStyle2.BackColor = System.Drawing.SystemColors.Window;
-			dataGridViewCellStyle2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			dataGridViewCellStyle2.ForeColor = System.Drawing.SystemColors.ControlText;
-			dataGridViewCellStyle2.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-			dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-			dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
-			this.urlDataGridView.DefaultCellStyle = dataGridViewCellStyle2;
+			dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+			dataGridViewCellStyle3.BackColor = System.Drawing.SystemColors.Window;
+			dataGridViewCellStyle3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			dataGridViewCellStyle3.ForeColor = System.Drawing.SystemColors.ControlText;
+			dataGridViewCellStyle3.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+			dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+			dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+			this.urlDataGridView.DefaultCellStyle = dataGridViewCellStyle3;
 			this.urlDataGridView.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.urlDataGridView.Location = new System.Drawing.Point(0, 51);
 			this.urlDataGridView.MultiSelect = false;
 			this.urlDataGridView.Name = "urlDataGridView";
 			this.urlDataGridView.ReadOnly = true;
-			dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-			dataGridViewCellStyle3.BackColor = System.Drawing.SystemColors.Control;
-			dataGridViewCellStyle3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			dataGridViewCellStyle3.ForeColor = System.Drawing.SystemColors.WindowText;
-			dataGridViewCellStyle3.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-			dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-			dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-			this.urlDataGridView.RowHeadersDefaultCellStyle = dataGridViewCellStyle3;
+			dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+			dataGridViewCellStyle4.BackColor = System.Drawing.SystemColors.Control;
+			dataGridViewCellStyle4.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			dataGridViewCellStyle4.ForeColor = System.Drawing.SystemColors.WindowText;
+			dataGridViewCellStyle4.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+			dataGridViewCellStyle4.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+			dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+			this.urlDataGridView.RowHeadersDefaultCellStyle = dataGridViewCellStyle4;
 			this.urlDataGridView.RowHeadersVisible = false;
 			this.urlDataGridView.RowTemplate.Height = 18;
 			this.urlDataGridView.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
 			this.urlDataGridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-			this.urlDataGridView.Size = new System.Drawing.Size(1262, 527);
+			this.urlDataGridView.Size = new System.Drawing.Size(1167, 498);
 			this.urlDataGridView.TabIndex = 1;
 			this.urlDataGridView.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.urlDataGridView_CellDoubleClick);
 			this.urlDataGridView.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.urlDataGridView_CellFormatting);
@@ -194,14 +198,14 @@
 			this.panel1.Dock = System.Windows.Forms.DockStyle.Top;
 			this.panel1.Location = new System.Drawing.Point(0, 25);
 			this.panel1.Name = "panel1";
-			this.panel1.Size = new System.Drawing.Size(1262, 26);
+			this.panel1.Size = new System.Drawing.Size(1167, 26);
 			this.panel1.TabIndex = 3;
 			// 
 			// checkButton
 			// 
 			this.checkButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.checkButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.checkButton.Location = new System.Drawing.Point(1139, 1);
+			this.checkButton.Location = new System.Drawing.Point(1044, 1);
 			this.checkButton.Name = "checkButton";
 			this.checkButton.Size = new System.Drawing.Size(111, 23);
 			this.checkButton.TabIndex = 2;
@@ -225,7 +229,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.urlTextBox.Location = new System.Drawing.Point(50, 3);
 			this.urlTextBox.Name = "urlTextBox";
-			this.urlTextBox.Size = new System.Drawing.Size(1083, 20);
+			this.urlTextBox.Size = new System.Drawing.Size(988, 20);
 			this.urlTextBox.TabIndex = 0;
 			this.urlTextBox.Text = "http://www.expeditions.com/";
 			this.urlTextBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.urlTextBox_KeyDown);
@@ -238,6 +242,21 @@
 			this.statusImageList.Images.SetKeyName(1, "failure");
 			this.statusImageList.Images.SetKeyName(2, "redirect");
 			this.statusImageList.Images.SetKeyName(3, "external");
+			// 
+			// statusStripMain
+			// 
+			this.statusStripMain.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStripStatusLabelTotalURLs});
+			this.statusStripMain.Location = new System.Drawing.Point(0, 527);
+			this.statusStripMain.Name = "statusStripMain";
+			this.statusStripMain.Size = new System.Drawing.Size(1167, 22);
+			this.statusStripMain.TabIndex = 4;
+			this.statusStripMain.Text = "statusStrip1";
+			// 
+			// toolStripStatusLabelTotalURLs
+			// 
+			this.toolStripStatusLabelTotalURLs.Name = "toolStripStatusLabelTotalURLs";
+			this.toolStripStatusLabelTotalURLs.Size = new System.Drawing.Size(0, 17);
 			// 
 			// statusDataGridViewImageColumn
 			// 
@@ -297,6 +316,9 @@
 			// TimeTaken
 			// 
 			this.TimeTaken.DataPropertyName = "TimeTaken";
+			dataGridViewCellStyle2.Format = "N0";
+			dataGridViewCellStyle2.NullValue = null;
+			this.TimeTaken.DefaultCellStyle = dataGridViewCellStyle2;
 			this.TimeTaken.HeaderText = "Time Taken";
 			this.TimeTaken.Name = "TimeTaken";
 			this.TimeTaken.ReadOnly = true;
@@ -320,7 +342,8 @@
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(1262, 578);
+			this.ClientSize = new System.Drawing.Size(1167, 549);
+			this.Controls.Add(this.statusStripMain);
 			this.Controls.Add(this.urlDataGridView);
 			this.Controls.Add(this.panel1);
 			this.Controls.Add(this.mainToolStrip);
@@ -333,6 +356,8 @@
 			((System.ComponentModel.ISupportInitialize)(this.urlDataGridView)).EndInit();
 			this.panel1.ResumeLayout(false);
 			this.panel1.PerformLayout();
+			this.statusStripMain.ResumeLayout(false);
+			this.statusStripMain.PerformLayout();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -353,6 +378,8 @@
 		private System.Windows.Forms.ImageList statusImageList;
 		private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
 		private System.Windows.Forms.ToolStripButton toolStripButtonShowOnlyErrors;
+		private System.Windows.Forms.StatusStrip statusStripMain;
+		private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabelTotalURLs;
 		private System.Windows.Forms.DataGridViewImageColumn statusDataGridViewImageColumn;
 		private System.Windows.Forms.DataGridViewTextBoxColumn idDataGridViewTextBoxColumn;
 		private System.Windows.Forms.DataGridViewTextBoxColumn statusDataGridViewTextBoxColumn;

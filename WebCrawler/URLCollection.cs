@@ -15,15 +15,15 @@ namespace WebCrawler
 
 		public URL Add(string url)
 		{
-			return Add(url, 0);
+			return Add(url, 0, "");
 		}
 
-		public URL Add(string url, int depth)
+		public URL Add(string url, int depth, string parent)
 		{
-			return Add(url, depth, "");
+			return Add(url, depth, parent, URLStatus.Default);
 		}
 
-		public URL Add(string url, int depth, string status)
+		public URL Add(string url, int depth, string parent, URLStatus status)
 		{
 			_event.WaitOne();
 
@@ -31,6 +31,7 @@ namespace WebCrawler
 			if(!_collection.Exists(x => x.Url == url))
 			{
 				temp = new URL(url, depth, status);
+				temp.LinksFrom.Add(parent);
 				_collection.Add(temp);
 				IsDirty = true;
 			}
@@ -55,10 +56,6 @@ namespace WebCrawler
 		{
 			get
 			{
-				/*_event.WaitOne();
-				List<URL> temp = _collection.Select(x => x).ToList();
-				_event.Set();
-				return temp;*/
 				return _collection;
 			}
 		}
@@ -71,9 +68,9 @@ namespace WebCrawler
 		public URL GetNext()
 		{
 			_event.WaitOne();
-			URL temp = _collection.Where(x => x.Status == "").FirstOrDefault();
+			URL temp = _collection.Where(x => x.Status == URLStatus.Default).FirstOrDefault();
 			if (temp != null)
-				temp.Status = "Downloading";
+				temp.Status = URLStatus.Downloading;
 			_event.Set();
 			return temp;
 		}
@@ -82,9 +79,9 @@ namespace WebCrawler
 		{
 			_event.WaitOne();
 
-			foreach(URL url in _collection)
+			foreach (URL url in _collection)
 			{
-				if(url.Status != "Done" && url.Status != "Skipped" && url.Status != "Error" && url.Status != "External" && url.Status != "Redirected")
+				if (url.Status < URLStatus.Done)
 				{
 					_event.Set();
 					return false;

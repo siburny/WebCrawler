@@ -7,6 +7,7 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using System.Threading;
+using System.Linq;
 
 namespace WebCrawler
 {
@@ -73,12 +74,13 @@ namespace WebCrawler
 
 		private void refreshTimer_Tick(object sender, EventArgs e)
 		{
-			if (crawling && collection.IsAllDone())
+			if (crawling)
 			{
-				toolStripButtonStop_Click(this, null);
+				toolStripStatusLabelTotalURLs.Text = "URLs: " + collection.Count.ToString() + " | Processed: " + collection.Collection.Count(x => (int)x.Status >= 10);
+				if (collection.IsAllDone())
+					toolStripButtonStop_Click(this, null);
 			}
 
-			this.Text = "Number of URLs: " + collection.Count.ToString();
 			if(collection.IsDirty)
 			{
 				collection.IsDirty = false;
@@ -106,11 +108,11 @@ namespace WebCrawler
 
 				if (url.Notes.StartsWith("Redirected"))
 					e.Value = statusImageList.Images["redirect"];
-				else if (url.Status == "External")
+				else if (url.Status == URLStatus.External)
 					e.Value = statusImageList.Images["external"];
-				else if (url.Status == "Done")
+				else if (url.Status == URLStatus.Done)
 					e.Value = statusImageList.Images["success"];
-				else if(url.Status.ToString() == "Error")
+				else if(url.Status == URLStatus.Error)
 					e.Value = statusImageList.Images["failure"];
 			}
 		}
@@ -118,27 +120,24 @@ namespace WebCrawler
 		private void urlDataGridView_RowPrePaint(object sender, DataGridViewRowPrePaintEventArgs e)
 		{
 			URL url = collection.Collection[e.RowIndex];
-			if(!url.HighlightColor.IsEmpty)
-				urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = url.HighlightColor;
-			else
-				switch(url.Status)
-				{
-					case "Error":
-						urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Red;
-						break;
-					case "External":
-						urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Blue;
-						break;
-					case "Done":
-						urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Green;
-						break;
-					case "Skipped":
-						urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Brown;
-						break;
-					default:
-						urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Orange;
-						break;
-				}
+			switch (url.Status)
+			{
+				case URLStatus.Error:
+					urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Red;
+					break;
+				case URLStatus.External:
+					urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Blue;
+					break;
+				case URLStatus.Done:
+					urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Green;
+					break;
+				case URLStatus.Skipped:
+					urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Brown;
+					break;
+				default:
+					urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Orange;
+					break;
+			}
 		}
 
 		private void toolStripButtonShowOnlyErrors_Click(object sender, EventArgs e)
@@ -155,7 +154,7 @@ namespace WebCrawler
 			childProcesses = new ChildThread[numProcesses];
 			for (int i = 0; i < numProcesses; i++)
 			{
-				childProcesses[i] = new ChildThread(collection);
+				childProcesses[i] = new ChildThread(i, collection);
 				childProcesses[i].Start();
 				Thread.Sleep(100);
 			}
@@ -170,10 +169,10 @@ namespace WebCrawler
 
 		private void urlDataGridView_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
 		{
-			string url = urlDataGridView.Rows[e.RowIndex].Cells[4].Value.ToString();
-			if (url != "")
+			if (e.RowIndex > -1)
 			{
-				InfoForm.Instance.ShowInfo(url, urlLinksFrom[url] as ArrayList, urlLinksTo[url] as ArrayList);
+				URL url = collection.Collection[e.RowIndex];
+				InfoForm.Instance.ShowInfo(url);
 			}
 		}
 
