@@ -55,16 +55,22 @@ namespace WebCrawler
 			}
 		}
 
-		private double _timeTaken;
+		private List<double> _timeTaken = new List<double>();
 		public double TimeTaken
 		{
-			get { return _timeTaken; }
+			get { return _timeTaken.Count == 0 ? 0.0 : _timeTaken.Average(); }
 			set
 			{
-				_timeTaken = value;
+				TimeTakenAttempts++;
+				_timeTaken.Add(value);
 				NotifyPropertyChanged("TimeTaken");
 			}
 		}
+		public string TimeTakenAll
+		{
+			get { return string.Join("\t", _timeTaken.Select(x => x.ToString())); }
+		}
+		public int TimeTakenAttempts = 0;
 
 		private string _notes;
 		public string Notes
@@ -119,7 +125,6 @@ namespace WebCrawler
 			Url = url;
 			MimeType = "";
 			ContentLength = 0;
-			TimeTaken = 0;
 			Notes = "";
 			Depth = depth;
 		}

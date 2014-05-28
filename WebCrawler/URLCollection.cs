@@ -11,7 +11,6 @@ namespace WebCrawler
 	{
 		private BindingListInvoked<URL> _collection;
 		private AutoResetEvent _event = new AutoResetEvent(true);
-		public bool IsDirty = false;
 
 		public URLCollection(ISynchronizeInvoke invoke)
 		{
@@ -38,7 +37,6 @@ namespace WebCrawler
 				temp = new URL(url, depth, status);
 				temp.LinksFrom.Add(parent);
 				_collection.Add(temp);
-				IsDirty = true;
 			}
 			else
 			{
@@ -49,12 +47,17 @@ namespace WebCrawler
 			return temp;
 		}
 
-		public int Count
+		public int Count()
 		{
-			get
-			{
-				return _collection.Count;
-			}
+			return _collection.Count;
+		}
+
+		public int Count(Func<URL, bool> predicate)
+		{
+			_event.WaitOne();
+			int count = _collection.Count(predicate);
+			_event.Set();
+			return count;
 		}
 
 		public BindingListInvoked<URL> Collection

@@ -15,23 +15,25 @@ namespace WebCrawler
 	[XmlRootAttribute(ElementName="Settings", IsNullable=false)]
 	public sealed class Settings
 	{
-		public static Settings Instance = new Settings();
 		private string ConfigPath;
+		public static Settings Instance = new Settings();
+
 		public int MaxProcesses;
 		public int MaxDepth;
 		public bool WarnOnRedirect;
 		public List<string> ExcludeRules;
-		public List<SettingsHighlightRule> HighlightRules = new List<SettingsHighlightRule>() { new SettingsHighlightRule { Expression = "repSubNav", HighlightColor = "0x" + Color.Pink.ToArgb().ToString("x") } };
+		public List<SettingsHighlightRule> HighlightRules;
 
 		private Settings()
 		{
 			ConfigPath = Application.StartupPath;
 
-			//default
+			//defaults
 			MaxProcesses = 5;
 			MaxDepth = 5;
 			ExcludeRules = new List<string>();
 			WarnOnRedirect = false;
+			HighlightRules = new List<SettingsHighlightRule>();
 		}
 
 		public void Save()
@@ -79,7 +81,10 @@ namespace WebCrawler
 		{
 			get
 			{
-				return "0x" + highlightColor.ToArgb().ToString("x");
+				string t = highlightColor.ToArgb().ToString("x");
+				if (t.Length > 6)
+					t = t.Substring(2);
+				return "0x" + t;
 			}
 			set
 			{

@@ -81,12 +81,12 @@ namespace WebCrawler
 				{
 					HttpWebRequest request = HttpWebRequest.Create(urlCheck) as HttpWebRequest;
 					request.AllowAutoRedirect = true;
-					request.Timeout = 15000;
+					request.Timeout = 60000;
 
 					DateTime start = DateTime.Now;
 
 					WebResponse response = request.GetResponse();
-					url.MimeType = response.ContentType;
+					url.MimeType = response.ContentType.Split(new char[] { ';' })[0].Trim();
 					url.ContentLength = response.ContentLength;
 					StreamReader readStream = new StreamReader(response.GetResponseStream());
 					buffer = readStream.ReadToEnd();
@@ -94,8 +94,11 @@ namespace WebCrawler
 
 					url.TimeTaken = (DateTime.Now - start).TotalMilliseconds;
 					foreach(SettingsHighlightRule rule in Settings.Instance.HighlightRules)
-						if(rule.IsMatch(buffer))
+						if (rule.IsMatch(buffer))
+						{
 							url.HighlightColor = rule.GetHighlightColor();
+							url.Notes = "Highlight rule matched";
+						}
 
 					if(response.ResponseUri.ToString() != urlCheck.ToString())
 					{
@@ -113,12 +116,8 @@ namespace WebCrawler
 					else if(Filter.IsMimeSupported(response.ContentType) && currentDepth < maximumDepth)
 					{
 						url.Status = URLStatus.Parsing;
-						collection.IsDirty = true;
 
-						//ArrayList links = Parser.Parse(buffer);
 						List<IDomObject> links = CQ.Create(buffer)["a"].ToList();
-
-						//add new links
 						foreach(IDomObject link in links)
 						{
 							if (link.Attributes["href"] == null)
@@ -149,34 +148,34 @@ namespace WebCrawler
 						}
 					}
 
-					// close connection
 					response.Close();
 				}
 				catch(WebException e)
 				{
 					url.Status = URLStatus.Error;
 					url.Notes = e.Message + Environment.NewLine + "-----------------------------------------------------------" + buffer;
-					collection.IsDirty = true;
 
-					Thread.Sleep(100);
+					Thread.Sleep(250);
 					continue;
 				}
 				catch(Exception e)
 				{
 					url.Status = URLStatus.Error;
 					url.Notes = e.Message + Environment.NewLine + "-----------------------------------------------------------" + buffer;
-					collection.IsDirty = true;
 
-					Thread.Sleep(100);
+					Thread.Sleep(250);
 					continue;
 				}
 
-				//Update UI
-				url.Status = URLStatus.Done;
-				collection.IsDirty = true;
-
+				if (!(url.Status == URLStatus.Error || url.Status == URLStatus.External || url.Status == URLStatus.Redirected || url.Status == URLStatus.Skipped || url.Status == URLStatus.Warning))
+				{
+					if (url.TimeTakenAttempts >= 5)
+						url.Status = URLStatus.Done;
+					else
+						url.Status = URLStatus.Default;
+				}
 				Application.DoEvents();
-				//Thread.Sleep(5000);
+				Thread.Sleep(250);
 			}
 		}
 	}

@@ -39,16 +39,10 @@
 			this.toolStripButtonPause = new System.Windows.Forms.ToolStripButton();
 			this.toolStripButtonStop = new System.Windows.Forms.ToolStripButton();
 			this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
-			this.urlDataGridView = new System.Windows.Forms.DataGridView();
-			this.refreshTimer = new System.Windows.Forms.Timer(this.components);
-			this.panel1 = new System.Windows.Forms.Panel();
-			this.checkButton = new System.Windows.Forms.Button();
-			this.urlLabel = new System.Windows.Forms.Label();
-			this.urlTextBox = new System.Windows.Forms.TextBox();
-			this.statusImageList = new System.Windows.Forms.ImageList(this.components);
-			this.statusStripMain = new System.Windows.Forms.StatusStrip();
-			this.toolStripStatusLabelTotalURLs = new System.Windows.Forms.ToolStripStatusLabel();
 			this.toolStripButtonShowNextError = new System.Windows.Forms.ToolStripButton();
+			this.toolStripButtonSettings = new System.Windows.Forms.ToolStripButton();
+			this.toolStripButtonHighlight = new System.Windows.Forms.ToolStripButton();
+			this.urlDataGridView = new System.Windows.Forms.DataGridView();
 			this.statusDataGridViewImageColumn = new System.Windows.Forms.DataGridViewImageColumn();
 			this.idDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
 			this.statusDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -59,6 +53,14 @@
 			this.TimeTaken = new System.Windows.Forms.DataGridViewTextBoxColumn();
 			this.notesDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
 			this.HighlightColor = new System.Windows.Forms.DataGridViewTextBoxColumn();
+			this.refreshTimer = new System.Windows.Forms.Timer(this.components);
+			this.panel1 = new System.Windows.Forms.Panel();
+			this.checkButton = new System.Windows.Forms.Button();
+			this.urlLabel = new System.Windows.Forms.Label();
+			this.urlTextBox = new System.Windows.Forms.TextBox();
+			this.statusImageList = new System.Windows.Forms.ImageList(this.components);
+			this.statusStripMain = new System.Windows.Forms.StatusStrip();
+			this.toolStripStatusLabelTotalURLs = new System.Windows.Forms.ToolStripStatusLabel();
 			this.mainToolStrip.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.urlDataGridView)).BeginInit();
 			this.panel1.SuspendLayout();
@@ -72,7 +74,9 @@
             this.toolStripButtonPause,
             this.toolStripButtonStop,
             this.toolStripSeparator1,
-            this.toolStripButtonShowNextError});
+            this.toolStripButtonShowNextError,
+            this.toolStripButtonSettings,
+            this.toolStripButtonHighlight});
 			this.mainToolStrip.Location = new System.Drawing.Point(0, 0);
 			this.mainToolStrip.Name = "mainToolStrip";
 			this.mainToolStrip.Size = new System.Drawing.Size(1167, 25);
@@ -116,6 +120,36 @@
 			this.toolStripSeparator1.Name = "toolStripSeparator1";
 			this.toolStripSeparator1.Size = new System.Drawing.Size(6, 25);
 			// 
+			// toolStripButtonShowNextError
+			// 
+			this.toolStripButtonShowNextError.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+			this.toolStripButtonShowNextError.ImageTransparentColor = System.Drawing.Color.Magenta;
+			this.toolStripButtonShowNextError.Name = "toolStripButtonShowNextError";
+			this.toolStripButtonShowNextError.Size = new System.Drawing.Size(95, 22);
+			this.toolStripButtonShowNextError.Text = "Show Next Error";
+			this.toolStripButtonShowNextError.Click += new System.EventHandler(this.toolStripButtonShowNextError_Click);
+			// 
+			// toolStripButtonSettings
+			// 
+			this.toolStripButtonSettings.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
+			this.toolStripButtonSettings.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+			this.toolStripButtonSettings.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButtonSettings.Image")));
+			this.toolStripButtonSettings.ImageTransparentColor = System.Drawing.Color.Transparent;
+			this.toolStripButtonSettings.Name = "toolStripButtonSettings";
+			this.toolStripButtonSettings.Size = new System.Drawing.Size(23, 22);
+			this.toolStripButtonSettings.Text = "toolStripButton1";
+			this.toolStripButtonSettings.Click += new System.EventHandler(this.toolStripButtonSettings_Click);
+			// 
+			// toolStripButtonHighlight
+			// 
+			this.toolStripButtonHighlight.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+			this.toolStripButtonHighlight.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButtonHighlight.Image")));
+			this.toolStripButtonHighlight.ImageTransparentColor = System.Drawing.Color.Magenta;
+			this.toolStripButtonHighlight.Name = "toolStripButtonHighlight";
+			this.toolStripButtonHighlight.Size = new System.Drawing.Size(120, 22);
+			this.toolStripButtonHighlight.Text = "Show Next Highlight";
+			this.toolStripButtonHighlight.Click += new System.EventHandler(this.toolStripButtonHighlight_Click);
+			// 
 			// urlDataGridView
 			// 
 			this.urlDataGridView.AllowUserToAddRows = false;
@@ -151,6 +185,7 @@
 			dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
 			this.urlDataGridView.DefaultCellStyle = dataGridViewCellStyle3;
 			this.urlDataGridView.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.urlDataGridView.EditMode = System.Windows.Forms.DataGridViewEditMode.EditProgrammatically;
 			this.urlDataGridView.Location = new System.Drawing.Point(0, 51);
 			this.urlDataGridView.MultiSelect = false;
 			this.urlDataGridView.Name = "urlDataGridView";
@@ -174,89 +209,6 @@
 			this.urlDataGridView.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.urlDataGridView_CellFormatting);
 			this.urlDataGridView.DataBindingComplete += new System.Windows.Forms.DataGridViewBindingCompleteEventHandler(this.urlDataGridView_DataBindingComplete);
 			this.urlDataGridView.RowPrePaint += new System.Windows.Forms.DataGridViewRowPrePaintEventHandler(this.urlDataGridView_RowPrePaint);
-			// 
-			// refreshTimer
-			// 
-			this.refreshTimer.Enabled = true;
-			this.refreshTimer.Interval = 1000;
-			this.refreshTimer.Tick += new System.EventHandler(this.refreshTimer_Tick);
-			// 
-			// panel1
-			// 
-			this.panel1.Controls.Add(this.checkButton);
-			this.panel1.Controls.Add(this.urlLabel);
-			this.panel1.Controls.Add(this.urlTextBox);
-			this.panel1.Dock = System.Windows.Forms.DockStyle.Top;
-			this.panel1.Location = new System.Drawing.Point(0, 25);
-			this.panel1.Name = "panel1";
-			this.panel1.Size = new System.Drawing.Size(1167, 26);
-			this.panel1.TabIndex = 3;
-			// 
-			// checkButton
-			// 
-			this.checkButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.checkButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.checkButton.Location = new System.Drawing.Point(1044, 1);
-			this.checkButton.Name = "checkButton";
-			this.checkButton.Size = new System.Drawing.Size(111, 23);
-			this.checkButton.TabIndex = 2;
-			this.checkButton.Text = "Check Website";
-			this.checkButton.UseVisualStyleBackColor = true;
-			this.checkButton.Click += new System.EventHandler(this.toolStripButtonPlay_Click);
-			// 
-			// urlLabel
-			// 
-			this.urlLabel.AutoSize = true;
-			this.urlLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.urlLabel.Location = new System.Drawing.Point(12, 6);
-			this.urlLabel.Name = "urlLabel";
-			this.urlLabel.Size = new System.Drawing.Size(36, 13);
-			this.urlLabel.TabIndex = 1;
-			this.urlLabel.Text = "URL:";
-			// 
-			// urlTextBox
-			// 
-			this.urlTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.urlTextBox.Location = new System.Drawing.Point(50, 3);
-			this.urlTextBox.Name = "urlTextBox";
-			this.urlTextBox.Size = new System.Drawing.Size(988, 20);
-			this.urlTextBox.TabIndex = 0;
-			this.urlTextBox.Text = "http://www.expeditions.com/";
-			this.urlTextBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.urlTextBox_KeyDown);
-			// 
-			// statusImageList
-			// 
-			this.statusImageList.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("statusImageList.ImageStream")));
-			this.statusImageList.TransparentColor = System.Drawing.Color.Transparent;
-			this.statusImageList.Images.SetKeyName(0, "success");
-			this.statusImageList.Images.SetKeyName(1, "failure");
-			this.statusImageList.Images.SetKeyName(2, "redirect");
-			this.statusImageList.Images.SetKeyName(3, "external");
-			// 
-			// statusStripMain
-			// 
-			this.statusStripMain.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.toolStripStatusLabelTotalURLs});
-			this.statusStripMain.Location = new System.Drawing.Point(0, 527);
-			this.statusStripMain.Name = "statusStripMain";
-			this.statusStripMain.Size = new System.Drawing.Size(1167, 22);
-			this.statusStripMain.TabIndex = 4;
-			this.statusStripMain.Text = "statusStrip1";
-			// 
-			// toolStripStatusLabelTotalURLs
-			// 
-			this.toolStripStatusLabelTotalURLs.Name = "toolStripStatusLabelTotalURLs";
-			this.toolStripStatusLabelTotalURLs.Size = new System.Drawing.Size(0, 17);
-			// 
-			// toolStripButtonShowNextError
-			// 
-			this.toolStripButtonShowNextError.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-			this.toolStripButtonShowNextError.ImageTransparentColor = System.Drawing.Color.Magenta;
-			this.toolStripButtonShowNextError.Name = "toolStripButtonShowNextError";
-			this.toolStripButtonShowNextError.Size = new System.Drawing.Size(95, 22);
-			this.toolStripButtonShowNextError.Text = "Show Next Error";
-			this.toolStripButtonShowNextError.Click += new System.EventHandler(this.toolStripButtonShowNextError_Click);
 			// 
 			// statusDataGridViewImageColumn
 			// 
@@ -339,6 +291,79 @@
 			this.HighlightColor.ReadOnly = true;
 			this.HighlightColor.Visible = false;
 			// 
+			// refreshTimer
+			// 
+			this.refreshTimer.Enabled = true;
+			this.refreshTimer.Tick += new System.EventHandler(this.refreshTimer_Tick);
+			// 
+			// panel1
+			// 
+			this.panel1.Controls.Add(this.checkButton);
+			this.panel1.Controls.Add(this.urlLabel);
+			this.panel1.Controls.Add(this.urlTextBox);
+			this.panel1.Dock = System.Windows.Forms.DockStyle.Top;
+			this.panel1.Location = new System.Drawing.Point(0, 25);
+			this.panel1.Name = "panel1";
+			this.panel1.Size = new System.Drawing.Size(1167, 26);
+			this.panel1.TabIndex = 3;
+			// 
+			// checkButton
+			// 
+			this.checkButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.checkButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.checkButton.Location = new System.Drawing.Point(1044, 1);
+			this.checkButton.Name = "checkButton";
+			this.checkButton.Size = new System.Drawing.Size(111, 23);
+			this.checkButton.TabIndex = 2;
+			this.checkButton.Text = "Check Website";
+			this.checkButton.UseVisualStyleBackColor = true;
+			this.checkButton.Click += new System.EventHandler(this.toolStripButtonPlay_Click);
+			// 
+			// urlLabel
+			// 
+			this.urlLabel.AutoSize = true;
+			this.urlLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.urlLabel.Location = new System.Drawing.Point(12, 6);
+			this.urlLabel.Name = "urlLabel";
+			this.urlLabel.Size = new System.Drawing.Size(36, 13);
+			this.urlLabel.TabIndex = 1;
+			this.urlLabel.Text = "URL:";
+			// 
+			// urlTextBox
+			// 
+			this.urlTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.urlTextBox.Location = new System.Drawing.Point(50, 3);
+			this.urlTextBox.Name = "urlTextBox";
+			this.urlTextBox.Size = new System.Drawing.Size(988, 20);
+			this.urlTextBox.TabIndex = 0;
+			this.urlTextBox.Text = "http://www.expeditions.com/";
+			this.urlTextBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.urlTextBox_KeyDown);
+			// 
+			// statusImageList
+			// 
+			this.statusImageList.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("statusImageList.ImageStream")));
+			this.statusImageList.TransparentColor = System.Drawing.Color.Transparent;
+			this.statusImageList.Images.SetKeyName(0, "success");
+			this.statusImageList.Images.SetKeyName(1, "failure");
+			this.statusImageList.Images.SetKeyName(2, "redirect");
+			this.statusImageList.Images.SetKeyName(3, "external");
+			// 
+			// statusStripMain
+			// 
+			this.statusStripMain.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStripStatusLabelTotalURLs});
+			this.statusStripMain.Location = new System.Drawing.Point(0, 527);
+			this.statusStripMain.Name = "statusStripMain";
+			this.statusStripMain.Size = new System.Drawing.Size(1167, 22);
+			this.statusStripMain.TabIndex = 4;
+			this.statusStripMain.Text = "statusStrip1";
+			// 
+			// toolStripStatusLabelTotalURLs
+			// 
+			this.toolStripStatusLabelTotalURLs.Name = "toolStripStatusLabelTotalURLs";
+			this.toolStripStatusLabelTotalURLs.Size = new System.Drawing.Size(0, 17);
+			// 
 			// MainForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -391,6 +416,8 @@
 		private System.Windows.Forms.DataGridViewTextBoxColumn TimeTaken;
 		private System.Windows.Forms.DataGridViewTextBoxColumn notesDataGridViewTextBoxColumn;
 		private System.Windows.Forms.DataGridViewTextBoxColumn HighlightColor;
+		private System.Windows.Forms.ToolStripButton toolStripButtonSettings;
+		private System.Windows.Forms.ToolStripButton toolStripButtonHighlight;
 	}
 }
 
