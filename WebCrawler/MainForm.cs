@@ -15,8 +15,6 @@ namespace WebCrawler
 	public partial class MainForm : Form
 	{
 		private bool crawling = false;
-		private Hashtable urlLinksTo = new Hashtable();
-		private Hashtable urlLinksFrom = new Hashtable();
 		private static ChildThread[] childProcesses;
 		private static int numProcesses;
 		private URLCollection collection;
@@ -88,6 +86,8 @@ namespace WebCrawler
 
 		private void ParseArguments(string[] args)
 		{
+			string url_arg = "";
+
 			if (args == null)
 				return;
 
@@ -138,10 +138,19 @@ namespace WebCrawler
 							MessageBox.Show("No filename specified for parameter '-o'");
 							return;
 						}
-						reportName = args[i].Replace("%d", DateTime.Now.ToString("yyyyMMdd"));
+						if (reportName != "console")
+						{
+							reportName = args[i].Replace("%d", DateTime.Now.ToString("yyyyMMdd"));
+						}
 						break;
 
 					default:
+						if(url_arg == "")
+                        {
+							url_arg = args[i];
+							collection.Add(url_arg);
+							break;
+                        }
 						MessageBox.Show("Unknown option: " + args[i]);
 						return;
 				}
@@ -151,7 +160,7 @@ namespace WebCrawler
 
 		private void refreshTimer_Tick(object sender, EventArgs e)
 		{
-			if(crawling)
+			if (crawling)
 			{
 				StringBuilder sb = new StringBuilder();
 				sb.Append("URLs: " + collection.Count().ToString());
@@ -167,26 +176,37 @@ namespace WebCrawler
 
 				if (collection.IsAllDone())
 				{
-					this.toolStripButtonStop_Click(this, null);
-					if (!string.IsNullOrEmpty(this.reportName))
+					toolStripButtonStop_Click(this, null);
+					if (!string.IsNullOrEmpty(reportName))
 					{
-						this.SaveReport();
-						this.Close();
+						SaveReport(reportName == "console");
+						Close();
 					}
 				}
 			}
 		}
 
-		private void SaveReport()
+		private void SaveReport(bool console = false)
 		{
-			using (StreamWriter file = new StreamWriter(this.reportName))
+			if (console)
 			{
-				file.WriteLine("URL\tTime Taken");
+				Console.WriteLine("URL".PadRight(120, ' ') + "Time Taken");
 				foreach (URL url in collection.Collection)
 				{
-					file.WriteLine(url.Url.ToString() + "\t" + url.TimeTakenAll);
+					Console.WriteLine(url.Url.ToString().PadRight(120, ' ').Substring(0, 118) + "\t" + url.TimeTakenAll);
 				}
-				file.Close();
+			}
+			else
+			{
+				using (StreamWriter file = new StreamWriter(reportName))
+				{
+					file.WriteLine("URL\tTime Taken");
+					foreach (URL url in collection.Collection)
+					{
+						file.WriteLine(url.Url.ToString() + "\t" + url.TimeTakenAll);
+					}
+					file.Close();
+				}
 			}
 		}
 

@@ -1,19 +1,16 @@
-﻿using System;
-using System.Data;
-using System.Collections;
+﻿using CsQuery;
+using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Net;
-using System.Windows.Forms;
-using System.Threading;
 using System.IO;
-using System.Web;
-using CsQuery;
 using System.Linq;
+using System.Net;
+using System.Threading;
+using System.Web;
+using System.Windows.Forms;
 
 namespace WebCrawler
 {
-	class ChildThread
+    class ChildThread
 	{
 		private int maximumDepth = Settings.Instance.MaxDepth;
 		private Thread childThread;
@@ -36,20 +33,20 @@ namespace WebCrawler
 			collection = _collection;
 			index = _index;
 			startingUri = new Uri(collection.GetStatingURL());
-			this.childThread = new Thread(new ThreadStart(ChildThreadProcess));
-			this.childThread.Name = "Child Process #" + (index + 1).ToString();
+			childThread = new Thread(new ThreadStart(ChildThreadProcess));
+			childThread.Name = "Child Process #" + (index + 1).ToString();
 		}
 
 		public void Start()
 		{
-			this.childThread.Start();
+			childThread.Start();
 		}
 
 		public void Stop()
 		{
-			//if (this.childThread.ThreadState == ThreadState.Running)
-			this.stopping = true;
-			//ThreadPool.QueueUserWorkItem(new WaitCallback(delegate { this.childThread.Join(15000); }));
+			//if (childThread.ThreadState == ThreadState.Running)
+			stopping = true;
+			//ThreadPool.QueueUserWorkItem(new WaitCallback(delegate { childThread.Join(15000); }));
 		}
 
 		public void ChildThreadProcess()
@@ -59,7 +56,7 @@ namespace WebCrawler
 
 			while (true)
 			{
-				if (this.stopping)
+				if (stopping)
 					break;
 
 				// Reset vars
@@ -80,6 +77,7 @@ namespace WebCrawler
 				try
 				{
 					HttpWebRequest request = HttpWebRequest.Create(urlCheck) as HttpWebRequest;
+					ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 					request.AllowAutoRedirect = true;
 					request.Timeout = 60000;
 
@@ -169,7 +167,7 @@ namespace WebCrawler
 
 				if (!(url.Status == URLStatus.Error || url.Status == URLStatus.External || url.Status == URLStatus.Redirected || url.Status == URLStatus.Skipped || url.Status == URLStatus.Warning))
 				{
-					if (url.TimeTakenAttempts >= 5)
+					if (url.TimeTakenAttempts >= 0)
 						url.Status = URLStatus.Done;
 					else
 						url.Status = URLStatus.Default;
