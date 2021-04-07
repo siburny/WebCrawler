@@ -70,7 +70,7 @@ namespace WebCrawler
 
 		public string GetStatingURL()
 		{
-			return _collection[0].Url;
+      return _collection[0].Url.IndexOf("?") > 0 ? _collection[0].Url.Substring(0, _collection[0].Url.IndexOf("?")) : _collection[0].Url;
 		}
 
 		public URL GetNext()

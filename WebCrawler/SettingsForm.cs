@@ -23,10 +23,17 @@ namespace WebCrawler
 
 		private void SettingsForm_FormClosing(object sender, FormClosingEventArgs e)
 		{
-			if (comboBoxDepth.SelectedIndex == -1 || comboBoxThreads.SelectedIndex == -1 || !Validate(textBoxHighlight.Text))
-				e.Cancel = true;
-			
-			Settings.Instance.Save();
+            if (comboBoxDepth.SelectedIndex == -1 || comboBoxThreads.SelectedIndex == -1 || !Validate(textBoxHighlight.Text))
+            {
+                e.Cancel = true;
+                return;
+            }
+
+            Settings.Instance.MaxDepth = int.Parse(comboBoxDepth.SelectedItem.ToString());
+            Settings.Instance.MaxProcesses = int.Parse(comboBoxThreads.SelectedItem.ToString());
+            Settings.Instance.ExcludeRules = textBoxIgnore.Text.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).ToList();
+
+            Settings.Instance.Save();
 		}
 
 		private bool Validate(string text)
@@ -61,6 +68,7 @@ namespace WebCrawler
 			comboBoxThreads.SelectedIndex = comboBoxThreads.FindStringExact(Settings.Instance.MaxProcesses.ToString());
 			comboBoxDepth.SelectedIndex = comboBoxDepth.FindStringExact(Settings.Instance.MaxDepth.ToString());
 			textBoxHighlight.Text = String.Join(Environment.NewLine, Settings.Instance.HighlightRules.Select(x => x.Expression + " => " + x.HighlightColor));
+            textBoxIgnore.Text = String.Join(Environment.NewLine, Settings.Instance.ExcludeRules);
 		}
-	}
+    }
 }

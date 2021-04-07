@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Text;
@@ -112,36 +110,59 @@ namespace WebCrawler
 						}
 						break;
 
-					case "-d":
-					case "-D":
-						i++;
-						if (i >= args.Length)
-						{
-							MessageBox.Show("No depth specified for parameter '-d'");
-							return;
-						}
-						int depth = -1;
-						if (int.TryParse(args[i], out depth))
-							Settings.Instance.MaxDepth = depth;
-						else
-						{
-							MessageBox.Show("Cannot accept depth specified for parameter '-d': " + args[i] + "");
-							return;
-						}
-						break;
+                    case "-d":
+                    case "-D":
+                        i++;
+                        if (i >= args.Length)
+                        {
+                            MessageBox.Show("No depth specified for parameter '-d'");
+                            return;
+                        }
+                        int depth = -1;
+                        if (int.TryParse(args[i], out depth))
+                            Settings.Instance.MaxDepth = depth;
+                        else
+                        {
+                            MessageBox.Show("Cannot accept depth specified for parameter '-d': " + args[i] + "");
+                            return;
+                        }
+                        break;
 
-					case "-o":
-					case "-O":
-						i++;
-						if (i >= args.Length)
-						{
-							MessageBox.Show("No filename specified for parameter '-o'");
-							return;
-						}
-						reportName = args[i].Replace("%d", DateTime.Now.ToString("yyyyMMdd"));
-						break;
+                    case "-n":
+                    case "-N":
+                        i++;
+                        if (i >= args.Length)
+                        {
+                            MessageBox.Show("No number specified for parameter '-n'");
+                            return;
+                        }
+                        int maxMeasurements = -1;
+                        if (int.TryParse(args[i], out maxMeasurements))
+                            Settings.Instance.MaxMeasurements = maxMeasurements;
+                        else
+                        {
+                            MessageBox.Show("Cannot accept number specified for parameter '-n': " + args[i] + "");
+                            return;
+                        }
+                        break;
 
-					default:
+                    case "-o":
+                    case "-O":
+                        i++;
+                        if (i >= args.Length)
+                        {
+                            MessageBox.Show("No filename specified for parameter '-o'");
+                            return;
+                        }
+                        reportName = args[i].Replace("%d", DateTime.Now.ToString("yyyyMMdd"));
+                        break;
+
+                    case "-q":
+                    case "-Q":
+                        Settings.Instance.QuickScan = true;
+                        break;
+
+                    default:
 						MessageBox.Show("Unknown option: " + args[i]);
 						return;
 				}
@@ -181,10 +202,10 @@ namespace WebCrawler
 		{
 			using (StreamWriter file = new StreamWriter(this.reportName))
 			{
-				file.WriteLine("URL\tTime Taken");
+				file.WriteLine("URL\tTime Taken\tStatus");
 				foreach (URL url in collection.Collection)
 				{
-					file.WriteLine(url.Url.ToString() + "\t" + url.TimeTakenAll);
+                    file.WriteLine(url.Url.ToString() + "\t" + url.TimeTakenAll + "\t" + url.Status);
 				}
 				file.Close();
 			}
@@ -227,8 +248,9 @@ namespace WebCrawler
 						case URLStatus.Error:
 							urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Red;
 							break;
-						case URLStatus.External:
-							urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Blue;
+                        case URLStatus.External:
+                        case URLStatus.Redirected:
+                            urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Blue;
 							break;
 						case URLStatus.Done:
 							urlDataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Green;

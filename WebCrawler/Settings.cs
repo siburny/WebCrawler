@@ -20,7 +20,9 @@ namespace WebCrawler
 
 		public int MaxProcesses;
 		public int MaxDepth;
+        public int MaxMeasurements;
 		public bool WarnOnRedirect;
+        public bool QuickScan;
 		public List<string> ExcludeRules;
 		public List<SettingsHighlightRule> HighlightRules;
 
@@ -31,6 +33,8 @@ namespace WebCrawler
 			//defaults
 			MaxProcesses = 5;
 			MaxDepth = 5;
+            MaxMeasurements = 1;
+            QuickScan = false;
 			ExcludeRules = new List<string>();
 			WarnOnRedirect = false;
 			HighlightRules = new List<SettingsHighlightRule>();
