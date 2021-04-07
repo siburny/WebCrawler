@@ -21,7 +21,7 @@ namespace WebCrawler
 
 		private void btnClose_Click(object sender, EventArgs e)
 		{
-			this.Hide();
+			Hide();
 		}
 
 		public void ShowInfo(URL url)
@@ -34,7 +34,7 @@ namespace WebCrawler
 			txtLinkTo.Text = "";
 			txtLinkTo.Text = String.Join(Environment.NewLine, url.LinksTo);
 
-			this.ShowDialog();
+			ShowDialog();
 		}
 	}
 }
