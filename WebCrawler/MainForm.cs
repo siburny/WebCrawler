@@ -211,7 +211,7 @@ namespace WebCrawler
                 Console.WriteLine("URL".PadRight(120, ' ') + "Time Taken".PadRight(20, ' ') + "Status");
                 foreach (URL url in collection.Collection)
                 {
-                    Console.WriteLine(url.Url.ToString().PadRight(120, ' ').Substring(0, 118) + "  " + url.TimeTakenAll.PadRight(20, ' ') + url.Status);
+                    Console.WriteLine(url.Url.ToString().PadRight(100, ' ').Substring(0, 98) + "  " + url.TimeTakenAll.PadRight(15, ' ') + url.Status);
                 }
             }
             else
