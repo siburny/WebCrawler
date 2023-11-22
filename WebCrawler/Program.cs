@@ -15,7 +15,7 @@ namespace WebCrawler
         [return: MarshalAs(UnmanagedType.Bool)]
         static extern bool FreeConsole();
 
-        [MTAThread]
+        [STAThread]
         static void Main(string[] args)
         {
             if (args.Length == 0)

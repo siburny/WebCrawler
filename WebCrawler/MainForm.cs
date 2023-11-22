@@ -372,5 +372,21 @@ namespace WebCrawler
             else
                 MessageBox.Show("Can't find any more highlighted rows.");
         }
+
+        private void toolStripButtonLoadURLList_Click(object sender, EventArgs e)
+        {
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                collection.Clear();
+
+                string[] urls = File.ReadAllLines(openFileDialog.FileName);
+                foreach (string url in urls)
+                {
+                    collection.Add(url);
+                }
+                if (collection.Collection.Count > 0)
+                    toolStripButtonPlay_Click(this, null);
+            }
+        }
     }
 }
