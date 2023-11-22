@@ -208,10 +208,10 @@ namespace WebCrawler
         {
             if (console)
             {
-                Console.WriteLine("URL".PadRight(120, ' ') + "Time Taken".PadRight(20, ' ') + "Status");
+                Console.WriteLine("URL".PadRight(100, ' ') + "Status".PadRight(10, ' ') + "Time Taken");
                 foreach (URL url in collection.Collection)
                 {
-                    Console.WriteLine(url.Url.ToString().PadRight(100, ' ').Substring(0, 98) + "  " + url.TimeTakenAll.PadRight(15, ' ') + url.Status);
+                    Console.WriteLine(url.Url.ToString().PadRight(100, ' ').Substring(0, 98) + "  " + url.Status.ToString().PadRight(10, ' ') + url.TimeTakenAll(" | "));
                 }
             }
             else
@@ -222,7 +222,7 @@ namespace WebCrawler
                     file.WriteLine("URL\tTime Taken\tStatus");
                     foreach (URL url in collection.Collection)
                     {
-                        file.WriteLine(url.Url.ToString() + "\t" + url.TimeTakenAll + "\t" + url.Status);
+                        file.WriteLine(url.Url.ToString() + "\t" + url.TimeTakenAll() + "\t" + url.Status);
                     }
                     file.Close();
                 }

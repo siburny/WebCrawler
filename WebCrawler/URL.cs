@@ -66,9 +66,9 @@ namespace WebCrawler
 				NotifyPropertyChanged("TimeTaken");
 			}
 		}
-		public string TimeTakenAll
+		public string TimeTakenAll(string separator = "\t")
 		{
-			get { return string.Join("\t", _timeTaken.Select(x => x.ToString())); }
+			return string.Join(separator, _timeTaken.Select(x => x.ToString()));
 		}
 		public int TimeTakenAttempts = 0;
 
