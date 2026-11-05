@@ -29,10 +29,10 @@ namespace WebCrawler
 			txtLink.Text = url.Url;
 
 			txtLinkFrom.Text = "";
-			txtLinkFrom.Text = String.Join(Environment.NewLine, url.LinksFrom);
+			txtLinkFrom.Text = String.Join(Environment.NewLine, url.GetLinksFrom());
 
 			txtLinkTo.Text = "";
-			txtLinkTo.Text = String.Join(Environment.NewLine, url.LinksTo);
+			txtLinkTo.Text = String.Join(Environment.NewLine, url.GetLinksTo());
 
 			ShowDialog();
 		}

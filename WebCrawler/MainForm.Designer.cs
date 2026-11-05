@@ -57,6 +57,7 @@
             this.statusDataGridViewImageColumn = new System.Windows.Forms.DataGridViewImageColumn();
             this.idDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.statusDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.httpStatusDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.depthDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.urlDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.mimeTypeDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -174,6 +175,7 @@
             this.statusDataGridViewImageColumn,
             this.idDataGridViewTextBoxColumn,
             this.statusDataGridViewTextBoxColumn,
+            this.httpStatusDataGridViewTextBoxColumn,
             this.depthDataGridViewTextBoxColumn,
             this.urlDataGridViewTextBoxColumn,
             this.mimeTypeDataGridViewTextBoxColumn,
@@ -241,7 +243,7 @@
             this.checkButton.TabIndex = 2;
             this.checkButton.Text = "Check Website";
             this.checkButton.UseVisualStyleBackColor = true;
-            this.checkButton.Click += new System.EventHandler(this.toolStripButtonPlay_Click);
+            this.checkButton.Click += new System.EventHandler(this.checkButton_Click);
             // 
             // urlLabel
             // 
@@ -261,7 +263,7 @@
             this.urlTextBox.Name = "urlTextBox";
             this.urlTextBox.Size = new System.Drawing.Size(988, 20);
             this.urlTextBox.TabIndex = 0;
-            this.urlTextBox.Text = "http://www.expeditions.com/";
+            this.urlTextBox.Text = "https://www.expeditions.com/";
             this.urlTextBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.urlTextBox_KeyDown);
             // 
             // statusImageList
@@ -329,6 +331,14 @@
             this.statusDataGridViewTextBoxColumn.HeaderText = "Status";
             this.statusDataGridViewTextBoxColumn.Name = "statusDataGridViewTextBoxColumn";
             this.statusDataGridViewTextBoxColumn.ReadOnly = true;
+            //
+            // httpStatusDataGridViewTextBoxColumn
+            //
+            this.httpStatusDataGridViewTextBoxColumn.DataPropertyName = "StatusCode";
+            this.httpStatusDataGridViewTextBoxColumn.HeaderText = "HTTP";
+            this.httpStatusDataGridViewTextBoxColumn.Name = "httpStatusDataGridViewTextBoxColumn";
+            this.httpStatusDataGridViewTextBoxColumn.ReadOnly = true;
+            this.httpStatusDataGridViewTextBoxColumn.Width = 50;
             // 
             // depthDataGridViewTextBoxColumn
             // 
@@ -438,6 +448,7 @@
         private System.Windows.Forms.DataGridViewImageColumn statusDataGridViewImageColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn idDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn statusDataGridViewTextBoxColumn;
+        private System.Windows.Forms.DataGridViewTextBoxColumn httpStatusDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn depthDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn urlDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn mimeTypeDataGridViewTextBoxColumn;
@@ -447,4 +458,3 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn HighlightColor;
     }
 }
-

@@ -17,6 +17,13 @@ namespace WebCrawler
             _collection = new BindingListInvoked<URL>(invoke);
         }
 
+        /// <summary>True when the text is an absolute http:// or https:// URL, i.e. something that can be requested.</summary>
+        public static bool TryParseCrawlUri(string url, out Uri uri)
+        {
+            return Uri.TryCreate(url, UriKind.Absolute, out uri)
+                && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
+        }
+
         public URL Add(string url)
         {
             return Add(url, 0, "");
@@ -27,20 +34,47 @@ namespace WebCrawler
             return Add(url, depth, parent, URLStatus.Default);
         }
 
+        /// <summary>
+        /// Adds a URL unless it is already known. Blank values are ignored (returns null). A URL that is
+        /// meant to be requested (status Default) but is not a valid absolute http/https URL is added as an
+        /// Error entry instead, so it is shown to the user and never handed to a worker thread.
+        /// The URL string itself is stored exactly as given.
+        /// </summary>
         public URL Add(string url, int depth, string parent, URLStatus status)
         {
+            if (string.IsNullOrWhiteSpace(url))
+                return null;
+
+            string note = null;
+            if (status == URLStatus.Default)
+            {
+                Uri parsed;
+                if (!TryParseCrawlUri(url, out parsed))
+                {
+                    status = URLStatus.Error;
+                    note = "Invalid URL: only absolute http:// or https:// URLs can be checked.";
+                }
+            }
+            else if (status == URLStatus.Skipped)
+            {
+                note = "Excluded by rule";
+            }
+
             _event.WaitOne();
 
-            URL temp;
-            if (_collection.SingleOrDefault(x => x.Url == url) == null)
+            URL temp = _collection.FirstOrDefault(x => x.Url == url);
+            if (temp == null)
             {
                 temp = new URL(url, depth, status);
-                temp.LinksFrom.Add(parent);
+                if (note != null)
+                    temp.Notes = note;
+                temp.AddLinkFrom(parent);
                 _collection.Add(temp);
             }
             else
             {
-                temp = _collection.FirstOrDefault(x => x.Url == url);
+                // Already known: still remember this additional referrer.
+                temp.AddLinkFrom(parent);
             }
 
             _event.Set();
@@ -68,9 +102,28 @@ namespace WebCrawler
             }
         }
 
-        public string GetStatingURL()
+        /// <summary>
+        /// The URL (query string removed) that defines the crawl scope: the first entry that is a valid
+        /// absolute http/https URL. Returns null when there is none.
+        /// </summary>
+        public Uri GetStartingUri()
         {
-            return _collection[0].Url.IndexOf("?") > 0 ? _collection[0].Url.Substring(0, _collection[0].Url.IndexOf("?")) : _collection[0].Url;
+            _event.WaitOne();
+            try
+            {
+                foreach (URL entry in _collection)
+                {
+                    string candidate = entry.Url.IndexOf("?") > 0 ? entry.Url.Substring(0, entry.Url.IndexOf("?")) : entry.Url;
+                    Uri parsed;
+                    if (TryParseCrawlUri(candidate, out parsed))
+                        return parsed;
+                }
+                return null;
+            }
+            finally
+            {
+                _event.Set();
+            }
         }
 
         public URL GetNext()

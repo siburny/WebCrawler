@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
@@ -44,8 +45,9 @@ namespace WebCrawler
 			}
 		}
 
-		private long _contentLength;
-		public long ContentLength
+		private long? _contentLength;
+		/// <summary>Size of the response body in bytes, or null when unknown (no Content-Length header and no body read).</summary>
+		public long? ContentLength
 		{
 			get { return _contentLength; }
 			set
@@ -68,7 +70,19 @@ namespace WebCrawler
 		}
 		public string TimeTakenAll(string separator = "\t")
 		{
-			return string.Join(separator, _timeTaken.Select(x => x.ToString()));
+			return string.Join(separator, _timeTaken.Select(x => x.ToString(CultureInfo.InvariantCulture)));
+		}
+
+		/// <summary>
+		/// One text value per measurement (invariant culture, so the decimal separator never depends on the
+		/// machine's regional settings), padded with empty strings up to <paramref name="padTo"/> entries.
+		/// </summary>
+		public string[] TimeTakenValues(int padTo)
+		{
+			List<string> values = _timeTaken.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList();
+			while (values.Count < padTo)
+				values.Add("");
+			return values.ToArray();
 		}
 		public int TimeTakenAttempts = 0;
 
@@ -105,8 +119,65 @@ namespace WebCrawler
 			}
 		}
 
-		public List<string> LinksFrom = new List<string>();
-		public List<string> LinksTo = new List<string>();
+		private int? _statusCode;
+		/// <summary>HTTP status code of the response, or null when no HTTP response was received.</summary>
+		public int? StatusCode
+		{
+			get { return _statusCode; }
+			set
+			{
+				_statusCode = value;
+				NotifyPropertyChanged("StatusCode");
+			}
+		}
+
+		// Link lists are written by worker threads and read by the UI thread, so access goes through the lock.
+		private readonly object _linksLock = new object();
+		private readonly List<string> _linksFrom = new List<string>();
+		private readonly List<string> _linksTo = new List<string>();
+		private readonly HashSet<string> _linksFromSet = new HashSet<string>();
+		private readonly HashSet<string> _linksToSet = new HashSet<string>();
+
+		/// <summary>Records a page that links to this URL (duplicates and empty values are ignored).</summary>
+		public void AddLinkFrom(string url)
+		{
+			if (string.IsNullOrEmpty(url))
+				return;
+			lock (_linksLock)
+			{
+				if (_linksFromSet.Add(url))
+					_linksFrom.Add(url);
+			}
+		}
+
+		/// <summary>Records a URL that this page links to (duplicates and empty values are ignored).</summary>
+		public void AddLinkTo(string url)
+		{
+			if (string.IsNullOrEmpty(url))
+				return;
+			lock (_linksLock)
+			{
+				if (_linksToSet.Add(url))
+					_linksTo.Add(url);
+			}
+		}
+
+		public string[] GetLinksFrom()
+		{
+			lock (_linksLock)
+			{
+				return _linksFrom.ToArray();
+			}
+		}
+
+		public string[] GetLinksTo()
+		{
+			lock (_linksLock)
+			{
+				return _linksTo.ToArray();
+			}
+		}
+
 		public event PropertyChangedEventHandler PropertyChanged;
 
 		public URL(string url)
@@ -124,7 +195,6 @@ namespace WebCrawler
 			Status = status;
 			Url = url;
 			MimeType = "";
-			ContentLength = 0;
 			Notes = "";
 			Depth = depth;
 		}

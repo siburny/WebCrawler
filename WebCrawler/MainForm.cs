@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
+using System.Globalization;
 using System.Text;
 using System.Windows.Forms;
 using System.Threading;
@@ -14,7 +16,6 @@ namespace WebCrawler
     {
         private bool crawling = false;
         private static ChildThread[] childProcesses;
-        private static int numProcesses;
         private URLCollection collection;
         private string[] args = null;
         private string reportName = "";
@@ -31,19 +32,81 @@ namespace WebCrawler
 
         private void toolStripButtonPlay_Click(object sender, EventArgs e)
         {
-            if (!crawling && urlTextBox.Text != "")
+            if (crawling)
+                return;
+
+            // Play resumes the scan that is already in the list (e.g. after Stop), whatever the URL box says.
+            // With nothing in the list yet there is nothing to resume, so it starts from the URL box.
+            if (collection.Collection.Count == 0)
             {
-                crawling = true;
+                StartNewScan();
+                return;
+            }
 
-                toolStripButtonPlay.Enabled = false;
-                //toolStripButtonPause.Enabled = true;
-                toolStripButtonStop.Enabled = true;
-                checkButton.Enabled = false;
+            if (collection.GetStartingUri() == null)
+            {
+                MessageBox.Show("There is no valid URL to crawl. Please use absolute URLs starting with http:// or https://");
+                return;
+            }
 
-                if (collection.Collection.Count == 0)
-                    collection.Add(urlTextBox.Text);
+            BeginCrawl();
+        }
 
+        // "Check Website": throw away all results and scan the address in the URL box from scratch.
+        private void checkButton_Click(object sender, EventArgs e)
+        {
+            if (crawling)
+                return;
+
+            StartNewScan();
+        }
+
+        private void StartNewScan()
+        {
+            string text = urlTextBox.Text.Trim();
+            if (text == "")
+                return;
+
+            Uri parsed;
+            if (!URLCollection.TryParseCrawlUri(text, out parsed))
+            {
+                MessageBox.Show("Please enter an absolute URL starting with http:// or https://");
+                return;
+            }
+
+            if (collection.Collection.Count > 0)
+            {
+                // A new collection (instead of Clear) so threads still finishing the previous scan
+                // cannot add their results to the new one.
+                collection = new URLCollection(urlDataGridView);
+                urlDataGridView.DataSource = collection.Collection;
+            }
+            collection.Add(text);
+
+            BeginCrawl();
+        }
+
+        private void BeginCrawl()
+        {
+            crawling = true;
+
+            toolStripButtonPlay.Enabled = false;
+            //toolStripButtonPause.Enabled = true;
+            toolStripButtonStop.Enabled = true;
+            checkButton.Enabled = false;
+
+            try
+            {
                 Start();
+            }
+            catch
+            {
+                // Don't leave the UI stuck in the "crawling" state if the threads could not be started.
+                crawling = false;
+                toolStripButtonPlay.Enabled = true;
+                toolStripButtonStop.Enabled = false;
+                checkButton.Enabled = true;
+                throw;
             }
         }
 
@@ -62,6 +125,7 @@ namespace WebCrawler
                 toolStripButtonPlay.Enabled = true;
                 //toolStripButtonPause.Enabled = true;
                 toolStripButtonStop.Enabled = false;
+                checkButton.Enabled = true;
 
                 Stop();
             }
@@ -74,7 +138,6 @@ namespace WebCrawler
             collection = new URLCollection(urlDataGridView);
             urlDataGridView.AutoGenerateColumns = false;
             urlDataGridView.DataSource = collection.Collection;
-            numProcesses = Settings.Instance.MaxProcesses;
 
             ParseArguments(args);
 
@@ -208,25 +271,61 @@ namespace WebCrawler
         {
             if (console)
             {
-                Console.WriteLine("URL".PadRight(100, ' ') + "Status".PadRight(10, ' ') + "Time Taken");
+                Console.WriteLine("URL".PadRight(100, ' ') + "Status".PadRight(10, ' ') + "HTTP".PadRight(6, ' ') + "Time Taken");
                 foreach (URL url in collection.Collection)
                 {
-                    Console.WriteLine(url.Url.ToString().PadRight(100, ' ').Substring(0, 98) + "  " + url.Status.ToString().PadRight(10, ' ') + url.TimeTakenAll(" | "));
+                    Console.WriteLine(url.Url.ToString().PadRight(100, ' ').Substring(0, 98) + "  " + url.Status.ToString().PadRight(10, ' ') + FormatStatusCode(url).PadRight(6, ' ') + url.TimeTakenAll(" | "));
                 }
             }
             else
             {
+                // A ".csv" report is real CSV (comma separated, fields quoted where needed). Any other
+                // file name keeps the tab-separated layout.
+                bool csv = reportName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase);
+                string separator = csv ? "," : "\t";
+
+                // One "Time Taken" column per measurement, so every row has the same number of columns
+                // and Status / Highlight / HTTP Status always sit in the same place.
+                int measurements = Math.Max(1, collection.Collection.Select(x => x.TimeTakenAttempts).DefaultIfEmpty(0).Max());
+
                 using (StreamWriter file = new StreamWriter(this.reportName))
                 {
+                    List<string> header = new List<string>();
+                    header.Add("URL");
+                    for (int i = 1; i <= measurements; i++)
+                        header.Add(measurements == 1 ? "Time Taken" : "Time Taken " + i.ToString(CultureInfo.InvariantCulture));
+                    header.Add("Status");
+                    header.Add("Highlight");
+                    header.Add("HTTP Status");
+                    file.WriteLine(string.Join(separator, header.Select(f => csv ? CsvField(f) : f)));
 
-                    file.WriteLine("URL\tTime Taken\tStatus");
                     foreach (URL url in collection.Collection)
                     {
-                        file.WriteLine(url.Url.ToString() + "\t" + url.TimeTakenAll() + "\t" + url.Status);
+                        List<string> fields = new List<string>();
+                        fields.Add(url.Url.ToString());
+                        fields.AddRange(url.TimeTakenValues(measurements));
+                        fields.Add(url.Status.ToString());
+                        fields.Add(url.HighlightColor.IsEmpty ? "" : url.HighlightColor.Name);
+                        fields.Add(FormatStatusCode(url));
+                        file.WriteLine(string.Join(separator, fields.Select(f => csv ? CsvField(f) : f)));
                     }
                     file.Close();
                 }
             }
+        }
+
+        private static string FormatStatusCode(URL url)
+        {
+            return url.StatusCode.HasValue ? url.StatusCode.Value.ToString(CultureInfo.InvariantCulture) : "";
+        }
+
+        private static string CsvField(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return "";
+            if (value.IndexOfAny(new char[] { ',', '"', '\r', '\n' }) >= 0)
+                return "\"" + value.Replace("\"", "\"\"") + "\"";
+            return value;
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -288,6 +387,8 @@ namespace WebCrawler
 
         private void Start()
         {
+            // Read the setting on every start so a change made in the Settings dialog applies to the next crawl.
+            int numProcesses = Math.Max(1, Settings.Instance.MaxProcesses);
             childProcesses = new ChildThread[numProcesses];
             for (int i = 0; i < numProcesses; i++)
             {
@@ -316,7 +417,8 @@ namespace WebCrawler
         {
             if (e.KeyCode == Keys.Enter)
             {
-                toolStripButtonPlay_Click(sender, e);
+                // Enter in the URL box behaves like the "Check Website" button.
+                checkButton_Click(sender, e);
                 e.Handled = true;
             }
         }
