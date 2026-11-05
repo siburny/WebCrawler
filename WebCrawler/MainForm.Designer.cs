@@ -36,8 +36,6 @@
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             this.mainToolStrip = new System.Windows.Forms.ToolStrip();
             this.toolStripButtonPlay = new System.Windows.Forms.ToolStripButton();
-            this.toolStripButtonPause = new System.Windows.Forms.ToolStripButton();
-            this.toolStripButtonStop = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.toolStripButtonShowNextError = new System.Windows.Forms.ToolStripButton();
             this.toolStripButtonSettings = new System.Windows.Forms.ToolStripButton();
@@ -77,8 +75,6 @@
             this.toolStripButtonLoadURLList,
             this.toolStripSeparator2,
             this.toolStripButtonPlay,
-            this.toolStripButtonPause,
-            this.toolStripButtonStop,
             this.toolStripSeparator1,
             this.toolStripButtonShowNextError,
             this.toolStripButtonSettings,
@@ -97,29 +93,7 @@
             this.toolStripButtonPlay.Name = "toolStripButtonPlay";
             this.toolStripButtonPlay.Size = new System.Drawing.Size(23, 22);
             this.toolStripButtonPlay.Text = "Play";
-            this.toolStripButtonPlay.Click += new System.EventHandler(this.toolStripButtonPlay_Click);
-            // 
-            // toolStripButtonPause
-            // 
-            this.toolStripButtonPause.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.toolStripButtonPause.Enabled = false;
-            this.toolStripButtonPause.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButtonPause.Image")));
-            this.toolStripButtonPause.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.toolStripButtonPause.Name = "toolStripButtonPause";
-            this.toolStripButtonPause.Size = new System.Drawing.Size(23, 22);
-            this.toolStripButtonPause.Text = "Pause";
-            this.toolStripButtonPause.Click += new System.EventHandler(this.toolStripButtonPause_Click);
-            // 
-            // toolStripButtonStop
-            // 
-            this.toolStripButtonStop.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.toolStripButtonStop.Enabled = false;
-            this.toolStripButtonStop.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButtonStop.Image")));
-            this.toolStripButtonStop.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.toolStripButtonStop.Name = "toolStripButtonStop";
-            this.toolStripButtonStop.Size = new System.Drawing.Size(23, 22);
-            this.toolStripButtonStop.Text = "Stop";
-            this.toolStripButtonStop.Click += new System.EventHandler(this.toolStripButtonStop_Click);
+            this.toolStripButtonPlay.Click += new System.EventHandler(this.startStopButton_Click);
             // 
             // toolStripSeparator1
             // 
@@ -243,7 +217,7 @@
             this.checkButton.TabIndex = 2;
             this.checkButton.Text = "Check Website";
             this.checkButton.UseVisualStyleBackColor = true;
-            this.checkButton.Click += new System.EventHandler(this.checkButton_Click);
+            this.checkButton.Click += new System.EventHandler(this.startStopButton_Click);
             // 
             // urlLabel
             // 
@@ -427,8 +401,6 @@
 
 		private System.Windows.Forms.ToolStrip mainToolStrip;
 		private System.Windows.Forms.ToolStripButton toolStripButtonPlay;
-		private System.Windows.Forms.ToolStripButton toolStripButtonPause;
-		private System.Windows.Forms.ToolStripButton toolStripButtonStop;
 		private System.Windows.Forms.DataGridView urlDataGridView;
 		private System.Windows.Forms.Timer refreshTimer;
 		private System.Windows.Forms.Panel panel1;

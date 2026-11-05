@@ -19,6 +19,9 @@ namespace WebCrawler
         private URLCollection collection;
         private string[] args = null;
         private string reportName = "";
+        private Image playImage;
+        private Image stopImage;
+        private string checkButtonText;
 
         public MainForm() : this(null)
         {
@@ -30,37 +33,17 @@ namespace WebCrawler
             args = _args;
         }
 
-        private void toolStripButtonPlay_Click(object sender, EventArgs e)
+        // Play and "Check Website" are the same control: start a fresh scan of the URL box,
+        // or stop the scan that is running.
+        private void startStopButton_Click(object sender, EventArgs e)
         {
             if (crawling)
-                return;
-
-            // Play resumes the scan that is already in the list (e.g. after Stop), whatever the URL box says.
-            // With nothing in the list yet there is nothing to resume, so it starts from the URL box.
-            if (collection.Collection.Count == 0)
-            {
+                StopCrawl();
+            else
                 StartNewScan();
-                return;
-            }
-
-            if (collection.GetStartingUri() == null)
-            {
-                MessageBox.Show("There is no valid URL to crawl. Please use absolute URLs starting with http:// or https://");
-                return;
-            }
-
-            BeginCrawl();
         }
 
-        // "Check Website": throw away all results and scan the address in the URL box from scratch.
-        private void checkButton_Click(object sender, EventArgs e)
-        {
-            if (crawling)
-                return;
-
-            StartNewScan();
-        }
-
+        // Throws away all results and scans the address in the URL box from scratch.
         private void StartNewScan()
         {
             string text = urlTextBox.Text.Trim();
@@ -75,25 +58,42 @@ namespace WebCrawler
             }
 
             if (collection.Collection.Count > 0)
-            {
-                // A new collection (instead of Clear) so threads still finishing the previous scan
-                // cannot add their results to the new one.
-                collection = new URLCollection(urlDataGridView);
-                urlDataGridView.DataSource = collection.Collection;
-            }
+                ResetCollection();
             collection.Add(text);
 
             BeginCrawl();
         }
 
+        // Scans the URLs that are already in the list (command-line arguments or a loaded URL file) without clearing it.
+        private void StartLoadedList()
+        {
+            if (crawling)
+                return;
+
+            if (collection.GetStartingUri() == null)
+            {
+                MessageBox.Show("There is no valid URL to crawl. Please use absolute URLs starting with http:// or https://");
+                return;
+            }
+
+            BeginCrawl();
+        }
+
+        // Replaces the results with a new, empty collection. A new collection (instead of Clear) means threads
+        // still finishing the previous scan cannot add their results to the new one.
+        private void ResetCollection()
+        {
+            // Unbind the grid from the old results *first*: while it is still bound, rebinding makes it
+            // re-format its current cell, and that lookup must not hit the new (empty) collection.
+            urlDataGridView.DataSource = null;
+            collection = new URLCollection(urlDataGridView);
+            urlDataGridView.DataSource = collection.Collection;
+        }
+
         private void BeginCrawl()
         {
             crawling = true;
-
-            toolStripButtonPlay.Enabled = false;
-            //toolStripButtonPause.Enabled = true;
-            toolStripButtonStop.Enabled = true;
-            checkButton.Enabled = false;
+            SetRunningState(true);
 
             try
             {
@@ -103,32 +103,46 @@ namespace WebCrawler
             {
                 // Don't leave the UI stuck in the "crawling" state if the threads could not be started.
                 crawling = false;
-                toolStripButtonPlay.Enabled = true;
-                toolStripButtonStop.Enabled = false;
-                checkButton.Enabled = true;
+                SetRunningState(false);
                 throw;
             }
         }
 
-        private void toolStripButtonPause_Click(object sender, EventArgs e)
+        private void StopCrawl()
         {
-            //toolStripButtonPlay.Enabled = true;
-            //toolStripButtonPause.Enabled = false;
-            //toolStripButtonStop.Enabled = true;
+            if (!crawling)
+                return;
+
+            crawling = false;
+            SetRunningState(false);
+            Stop();
         }
 
-        private void toolStripButtonStop_Click(object sender, EventArgs e)
+        // While a scan runs, the Play button turns into Stop and the Check Website button reads "Stop".
+        private void SetRunningState(bool running)
         {
-            if (crawling)
+            if (stopImage == null)
             {
-                crawling = false;
-                toolStripButtonPlay.Enabled = true;
-                //toolStripButtonPause.Enabled = true;
-                toolStripButtonStop.Enabled = false;
-                checkButton.Enabled = true;
-
-                Stop();
+                playImage = toolStripButtonPlay.Image;
+                stopImage = CreateStopImage(playImage != null ? playImage.Size : new Size(16, 16));
+                checkButtonText = checkButton.Text;
             }
+
+            toolStripButtonPlay.Image = running ? stopImage : playImage;
+            toolStripButtonPlay.Text = running ? "Stop" : "Play";
+            checkButton.Text = running ? "Stop" : checkButtonText;
+        }
+
+        private static Image CreateStopImage(Size size)
+        {
+            Bitmap bitmap = new Bitmap(size.Width, size.Height);
+            using (Graphics g = Graphics.FromImage(bitmap))
+            using (Brush brush = new SolidBrush(Color.Firebrick))
+            {
+                int inset = Math.Max(2, size.Width / 5);
+                g.FillRectangle(brush, inset, inset, size.Width - 2 * inset, size.Height - 2 * inset);
+            }
+            return bitmap;
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -142,7 +156,7 @@ namespace WebCrawler
             ParseArguments(args);
 
             if (collection.Collection.Count > 0)
-                toolStripButtonPlay_Click(this, null);
+                StartLoadedList();
         }
 
         private void ParseArguments(string[] args)
@@ -257,7 +271,7 @@ namespace WebCrawler
 
                 if (collection.IsAllDone())
                 {
-                    toolStripButtonStop_Click(this, null);
+                    StopCrawl();
                     if (!string.IsNullOrEmpty(reportName))
                     {
                         SaveReport(reportName == "console");
@@ -338,6 +352,10 @@ namespace WebCrawler
 
         private void urlDataGridView_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
+            // The grid can briefly hold rows the list no longer has (list swapped/cleared, change events still queued).
+            if (e.RowIndex < 0 || e.RowIndex >= collection.Collection.Count)
+                return;
+
             if (urlDataGridView.Columns[e.ColumnIndex].Name.Equals("statusDataGridViewImageColumn"))
             {
                 URL url = collection.Collection[e.RowIndex];
@@ -355,6 +373,9 @@ namespace WebCrawler
 
         private void urlDataGridView_RowPrePaint(object sender, DataGridViewRowPrePaintEventArgs e)
         {
+            if (e.RowIndex < 0 || e.RowIndex >= collection.Collection.Count)
+                return;
+
             if ((urlDataGridView.Rows[e.RowIndex].State & DataGridViewElementStates.Selected) == 0)
             {
                 URL url = collection.Collection[e.RowIndex];
@@ -406,7 +427,7 @@ namespace WebCrawler
 
         private void urlDataGridView_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
-            if (e.RowIndex > -1)
+            if (e.RowIndex > -1 && e.RowIndex < collection.Collection.Count)
             {
                 URL url = collection.Collection[e.RowIndex];
                 InfoForm.Instance.ShowInfo(url);
@@ -417,8 +438,9 @@ namespace WebCrawler
         {
             if (e.KeyCode == Keys.Enter)
             {
-                // Enter in the URL box behaves like the "Check Website" button.
-                checkButton_Click(sender, e);
+                // Enter in the URL box starts a scan like the Play / Check Website buttons (it never stops one).
+                if (!crawling)
+                    StartNewScan();
                 e.Handled = true;
             }
         }
@@ -479,7 +501,9 @@ namespace WebCrawler
         {
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
-                collection.Clear();
+                // Loading a list replaces whatever is in the grid, including a scan that is still running.
+                StopCrawl();
+                ResetCollection();
 
                 string[] urls = File.ReadAllLines(openFileDialog.FileName);
                 foreach (string url in urls)
@@ -487,7 +511,7 @@ namespace WebCrawler
                     collection.Add(url);
                 }
                 if (collection.Collection.Count > 0)
-                    toolStripButtonPlay_Click(this, null);
+                    StartLoadedList();
             }
         }
     }
