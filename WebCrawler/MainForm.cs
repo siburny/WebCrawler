@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Globalization;
 using System.Text;
 using System.Windows.Forms;
@@ -23,6 +24,26 @@ public partial class MainForm : Form
     private Image stopImage;
     private string checkButtonText;
 
+    // The grid's row height and column widths are pixel values, which the DataGridView does not scale
+    // with the display DPI on its own, so they are kept here in 96-DPI units and scaled in ApplyGridDpiScaling.
+    private const int GridRowHeight = 18;
+    private static readonly Dictionary<string, int> GridColumnWidths = new Dictionary<string, int>
+    {
+        { "statusDataGridViewImageColumn", 40 },
+        { "statusDataGridViewTextBoxColumn", 75 },
+        { "httpStatusDataGridViewTextBoxColumn", 45 },
+        { "depthDataGridViewTextBoxColumn", 45 },
+        { "mimeTypeDataGridViewTextBoxColumn", 80 },
+        { "TimeTaken", 70 },
+    };
+    private static readonly Dictionary<string, int> GridColumnMinimumWidths = new Dictionary<string, int>
+    {
+        { "urlDataGridViewTextBoxColumn", 250 },
+        { "notesDataGridViewTextBoxColumn", 60 },
+    };
+    private readonly Dictionary<string, Image> statusImageSources = new Dictionary<string, Image>();
+    private readonly Dictionary<string, Image> statusImages = new Dictionary<string, Image>();
+
     public MainForm() : this(null)
     {
     }
@@ -31,6 +52,65 @@ public partial class MainForm : Form
     {
         InitializeComponent();
         args = _args;
+
+        foreach (string key in new[] { "success", "failure", "redirect", "external" })
+            statusImageSources[key] = statusImageList.Images[key];
+        // Shown for rows that are still queued or skipped.
+        if (statusDataGridViewImageColumn.Image != null)
+            statusImageSources["default"] = new Bitmap(statusDataGridViewImageColumn.Image);
+
+        // Raised after the form has rescaled the grid when it moves to a monitor with a different DPI.
+        urlDataGridView.DpiChangedAfterParent += (s, e) => ApplyGridDpiScaling();
+    }
+
+    private static Image ScaleImage(Image source, int height)
+    {
+        int width = Math.Max(1, (int)Math.Round(source.Width * (double)height / source.Height));
+        Bitmap result = new Bitmap(width, height);
+        using (Graphics g = Graphics.FromImage(result))
+        {
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+            g.DrawImage(source, new Rectangle(0, 0, width, height));
+        }
+        return result;
+    }
+
+    // Scales row height, column widths and the status icons to the DPI the grid is currently shown at.
+    // Always computed from the 96-DPI values, so calling it repeatedly gives the same result.
+    private void ApplyGridDpiScaling()
+    {
+        int rowHeight = urlDataGridView.LogicalToDeviceUnits(GridRowHeight);
+        urlDataGridView.RowTemplate.Height = rowHeight;
+
+        // Url and Notes fill the remaining width (3:1) and Content Length sizes itself, so only the other columns get a fixed width.
+        foreach (DataGridViewColumn column in urlDataGridView.Columns)
+        {
+            int width;
+            if (GridColumnWidths.TryGetValue(column.Name, out width))
+                column.Width = urlDataGridView.LogicalToDeviceUnits(width);
+
+            int minimumWidth;
+            if (GridColumnMinimumWidths.TryGetValue(column.Name, out minimumWidth))
+                column.MinimumWidth = urlDataGridView.LogicalToDeviceUnits(minimumWidth);
+        }
+
+        // The status icons fill the row height (16 px at 100%), scaled from the original images with high-quality resampling.
+        int iconSize = rowHeight - urlDataGridView.LogicalToDeviceUnits(2);
+        Image[] oldImages = statusImages.Values.ToArray();
+        statusImages.Clear();
+        foreach (KeyValuePair<string, Image> source in statusImageSources)
+            statusImages[source.Key] = ScaleImage(source.Value, iconSize);
+        urlDataGridView.Invalidate();
+        foreach (Image old in oldImages)
+            old.Dispose();
+
+        // Rows that already exist keep the height they were created with.
+        foreach (DataGridViewRow row in urlDataGridView.Rows)
+        {
+            if (row.Height != rowHeight)
+                row.Height = rowHeight;
+        }
     }
 
     // Play and "Check Website" are the same control: start a fresh scan of the URL box,
@@ -150,6 +230,8 @@ public partial class MainForm : Form
 
     private void MainForm_Load(object sender, EventArgs e)
     {
+        ApplyGridDpiScaling();
+
         if (!Settings.Instance.Load())
             Settings.Instance.Save();
         collection = new URLCollection();
@@ -375,13 +457,15 @@ public partial class MainForm : Form
             URL url = collection.Collection[e.RowIndex];
 
             if (url.Status == URLStatus.Redirected)
-                e.Value = statusImageList.Images["redirect"];
+                e.Value = statusImages["redirect"];
             else if (url.Status == URLStatus.External)
-                e.Value = statusImageList.Images["external"];
+                e.Value = statusImages["external"];
             else if (url.Status == URLStatus.Done)
-                e.Value = statusImageList.Images["success"];
+                e.Value = statusImages["success"];
             else if (url.Status == URLStatus.Error)
-                e.Value = statusImageList.Images["failure"];
+                e.Value = statusImages["failure"];
+            else if (statusImages.ContainsKey("default"))
+                e.Value = statusImages["default"];
         }
     }
 

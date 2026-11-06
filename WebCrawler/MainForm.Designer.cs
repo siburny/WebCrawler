@@ -53,7 +53,6 @@
             this.toolStripButtonLoadURLList = new System.Windows.Forms.ToolStripButton();
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.statusDataGridViewImageColumn = new System.Windows.Forms.DataGridViewImageColumn();
-            this.idDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.statusDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.httpStatusDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.depthDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -147,11 +146,10 @@
             this.urlDataGridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.urlDataGridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.statusDataGridViewImageColumn,
-            this.idDataGridViewTextBoxColumn,
+            this.urlDataGridViewTextBoxColumn,
             this.statusDataGridViewTextBoxColumn,
             this.httpStatusDataGridViewTextBoxColumn,
             this.depthDataGridViewTextBoxColumn,
-            this.urlDataGridViewTextBoxColumn,
             this.mimeTypeDataGridViewTextBoxColumn,
             this.contentLengthDataGridViewTextBoxColumn,
             this.TimeTaken,
@@ -292,13 +290,6 @@
             this.statusDataGridViewImageColumn.Resizable = System.Windows.Forms.DataGridViewTriState.False;
             this.statusDataGridViewImageColumn.Width = 50;
             // 
-            // idDataGridViewTextBoxColumn
-            // 
-            this.idDataGridViewTextBoxColumn.DataPropertyName = "Id";
-            this.idDataGridViewTextBoxColumn.HeaderText = "ID";
-            this.idDataGridViewTextBoxColumn.Name = "idDataGridViewTextBoxColumn";
-            this.idDataGridViewTextBoxColumn.ReadOnly = true;
-            // 
             // statusDataGridViewTextBoxColumn
             // 
             this.statusDataGridViewTextBoxColumn.DataPropertyName = "Status";
@@ -325,6 +316,7 @@
             // urlDataGridViewTextBoxColumn
             // 
             this.urlDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.urlDataGridViewTextBoxColumn.FillWeight = 300F;
             this.urlDataGridViewTextBoxColumn.DataPropertyName = "Url";
             this.urlDataGridViewTextBoxColumn.HeaderText = "Url";
             this.urlDataGridViewTextBoxColumn.Name = "urlDataGridViewTextBoxColumn";
@@ -362,7 +354,8 @@
             this.notesDataGridViewTextBoxColumn.HeaderText = "Notes";
             this.notesDataGridViewTextBoxColumn.Name = "notesDataGridViewTextBoxColumn";
             this.notesDataGridViewTextBoxColumn.ReadOnly = true;
-            this.notesDataGridViewTextBoxColumn.Width = 300;
+            this.notesDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.notesDataGridViewTextBoxColumn.FillWeight = 100F;
             // 
             // HighlightColor
             // 
@@ -418,7 +411,6 @@
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
         private System.Windows.Forms.OpenFileDialog openFileDialog;
         private System.Windows.Forms.DataGridViewImageColumn statusDataGridViewImageColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn idDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn statusDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn httpStatusDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn depthDataGridViewTextBoxColumn;
