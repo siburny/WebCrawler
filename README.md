@@ -83,4 +83,22 @@ few at a time, so a fast crawl never freezes the window. Stopping cancels the re
 
 ## Continuous integration
 
-`.github/workflows/build.yml` builds and tests on every push and pull request, and publishes the application as a build artifact.
+`.github/workflows/build.yml` runs on Windows for every push to the main branch and every pull request: it builds,
+runs the tests and keeps the application as a downloadable build artifact.
+
+**To publish a release,** put `[release]` in the message of the last commit of the push:
+
+```
+git commit -m "Add CSV export [release]"
+git push
+```
+
+The build then also creates a GitHub release. Its version is the latest release tag with the minor number raised by one
+(`v1.4.0` becomes `1.5.0`; the first release is `1.1.0`). The release, named `WebCrawler 1.5.0`, has
+`WebCrawler-1.5.0-win.zip` attached and release notes generated from the commits since the previous release.
+Only the last commit's message is checked, so with several commits in one push the marker must be in the last one.
+
+To start a new major version, create a tag by hand (`git tag v2.0.0`, `git push origin v2.0.0`); the next release is
+then `2.1.0`.
+
+The zip needs the .NET 10 Desktop Runtime on the target machine.
