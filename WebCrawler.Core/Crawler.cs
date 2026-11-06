@@ -296,12 +296,12 @@ public sealed class Crawler : IDisposable
         }
     }
 
-    // Files a found address as excluded, part of the site (to be checked) or external (shown, not followed).
+    // Files a found address as excluded, part of the site (to be checked; subdomains count, see SiteScope) or external (shown, not followed).
     private void AddLink(string linkUrl, Uri resolved, int depth, string from)
     {
         if (Filter.IsExcluded(linkUrl, _options.ExcludeRules))
             _collection.Add(linkUrl, depth, from, URLStatus.Skipped);
-        else if (_options.StartingUri.IsBaseOf(resolved))
+        else if (SiteScope.Contains(_options.StartingUri, resolved))
             _collection.Add(linkUrl, depth, from);
         else
             _collection.Add(linkUrl, depth, from, URLStatus.External);

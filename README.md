@@ -78,6 +78,10 @@ A `config.json` that cannot be read is renamed to `config.json.bad` and the defa
 - Every request carries a `User-Agent` header (many sites refuse requests without one). Set `UserAgent` to use your own.
 - Requests to one site are spaced at least `RequestDelayMs` apart, whatever `MaxProcesses` is. More connections then
   mainly help when pages are slow to answer; lower the delay (or set it to 0) to scan a site of your own faster.
+- The site is the address you start from, and its subdomains: starting at `https://expeditions.com` also follows
+  `https://world.expeditions.com/page`. The parent domain and sibling subdomains are only listed, not followed, and so is
+  everything on another scheme or port. A start address with a path (`https://expeditions.com/blog/`) limits the scan to
+  that path, on subdomains too.
 - `robots.txt` is not read: the program checks every address of the site you give it. Only use it on sites you may check.
 - TLS versions are left to the operating system, so TLS 1.3 works.
 
