@@ -1,37 +1,51 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Drawing;
 using System.Globalization;
 using System.Linq;
-using System.Text;
-using System.Windows.Forms;
 
 namespace WebCrawler
 {
-	public class URL : INotifyPropertyChanged
+	/// <summary>
+	/// One checked address. Worker threads fill it in while the UI thread reads it, so every field that is not
+	/// atomic to read (structs, lists) is guarded by a lock, and every change is reported to the owning
+	/// <see cref="URLCollection"/>, which tells the grid to repaint the row on the UI thread.
+	/// </summary>
+	public class URL
 	{
-		//public int Id;
-		URLStatus _status;
+		// Guards the non-atomic fields below. Never held while calling into the owning collection.
+		private readonly object _lock = new object();
+
+		// Set once by the owning URLCollection when the URL is added to it (see URLCollection.Add).
+		internal URLCollection Owner;
+		internal int Index;
+		internal bool DirtyQueued; // guarded by the owner's lock
+
+		private volatile URLStatus _status;
 		public URLStatus Status
 		{
 			get { return _status; }
 			set
 			{
-				_status = value;
-				NotifyPropertyChanged("Status");
+				// The collection keeps its counters and work queue in step with every status change.
+				URLCollection owner = Owner;
+				if (owner != null)
+					owner.ChangeStatus(this, value);
+				else
+					_status = value;
 			}
 		}
 
-		private string _url;
+		// Only called by URLCollection, under its lock.
+		internal void SetStatusCore(URLStatus value)
+		{
+			_status = value;
+		}
+
+		private readonly string _url;
 		public string Url
 		{
 			get { return _url; }
-			set
-			{
-				_url = value;
-				NotifyPropertyChanged("Url");
-			}
 		}
 
 		private string _mimeType;
@@ -41,7 +55,7 @@ namespace WebCrawler
 			set
 			{
 				_mimeType = value;
-				NotifyPropertyChanged("MimeType");
+				Changed();
 			}
 		}
 
@@ -49,28 +63,44 @@ namespace WebCrawler
 		/// <summary>Size of the response body in bytes, or null when unknown (no Content-Length header and no body read).</summary>
 		public long? ContentLength
 		{
-			get { return _contentLength; }
+			get { lock (_lock) { return _contentLength; } }
 			set
 			{
-				_contentLength = value;
-				NotifyPropertyChanged("ContentLength");
+				lock (_lock) { _contentLength = value; }
+				Changed();
 			}
 		}
 
-		private List<double> _timeTaken = new List<double>();
+		private readonly List<double> _timeTaken = new List<double>();
+		/// <summary>Average of all measurements so far; assigning a value records one more measurement.</summary>
 		public double TimeTaken
 		{
-			get { return _timeTaken.Count == 0 ? 0.0 : _timeTaken.Average(); }
+			get
+			{
+				lock (_lock) { return _timeTaken.Count == 0 ? 0.0 : _timeTaken.Average(); }
+			}
 			set
 			{
-				TimeTakenAttempts++;
-				_timeTaken.Add(value);
-				NotifyPropertyChanged("TimeTaken");
+				lock (_lock) { _timeTaken.Add(value); }
+				Changed();
 			}
 		}
+
+		/// <summary>Number of measurements recorded so far.</summary>
+		public int TimeTakenAttempts
+		{
+			get
+			{
+				lock (_lock) { return _timeTaken.Count; }
+			}
+		}
+
 		public string TimeTakenAll(string separator = "\t")
 		{
-			return string.Join(separator, _timeTaken.Select(x => x.ToString(CultureInfo.InvariantCulture)));
+			lock (_lock)
+			{
+				return string.Join(separator, _timeTaken.Select(x => x.ToString(CultureInfo.InvariantCulture)));
+			}
 		}
 
 		/// <summary>
@@ -79,12 +109,15 @@ namespace WebCrawler
 		/// </summary>
 		public string[] TimeTakenValues(int padTo)
 		{
-			List<string> values = _timeTaken.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList();
+			List<string> values;
+			lock (_lock)
+			{
+				values = _timeTaken.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToList();
+			}
 			while (values.Count < padTo)
 				values.Add("");
 			return values.ToArray();
 		}
-		public int TimeTakenAttempts = 0;
 
 		private string _notes;
 		public string Notes
@@ -93,29 +126,24 @@ namespace WebCrawler
 			set
 			{
 				_notes = value;
-				NotifyPropertyChanged("Notes");
+				Changed();
 			}
 		}
 
-		private int _depth;
+		private readonly int _depth;
 		public int Depth
 		{
 			get { return _depth; }
-			set
-			{
-				_depth = value;
-				NotifyPropertyChanged("Depth");
-			}
 		}
 
 		private Color _highlightColor;
 		public Color HighlightColor
 		{
-			get { return _highlightColor; }
+			get { lock (_lock) { return _highlightColor; } }
 			set
 			{
-				_highlightColor = value;
-				NotifyPropertyChanged("HighlightColor");
+				lock (_lock) { _highlightColor = value; }
+				Changed();
 			}
 		}
 
@@ -123,16 +151,14 @@ namespace WebCrawler
 		/// <summary>HTTP status code of the response, or null when no HTTP response was received.</summary>
 		public int? StatusCode
 		{
-			get { return _statusCode; }
+			get { lock (_lock) { return _statusCode; } }
 			set
 			{
-				_statusCode = value;
-				NotifyPropertyChanged("StatusCode");
+				lock (_lock) { _statusCode = value; }
+				Changed();
 			}
 		}
 
-		// Link lists are written by worker threads and read by the UI thread, so access goes through the lock.
-		private readonly object _linksLock = new object();
 		private readonly List<string> _linksFrom = new List<string>();
 		private readonly List<string> _linksTo = new List<string>();
 		private readonly HashSet<string> _linksFromSet = new HashSet<string>();
@@ -143,7 +169,7 @@ namespace WebCrawler
 		{
 			if (string.IsNullOrEmpty(url))
 				return;
-			lock (_linksLock)
+			lock (_lock)
 			{
 				if (_linksFromSet.Add(url))
 					_linksFrom.Add(url);
@@ -155,7 +181,7 @@ namespace WebCrawler
 		{
 			if (string.IsNullOrEmpty(url))
 				return;
-			lock (_linksLock)
+			lock (_lock)
 			{
 				if (_linksToSet.Add(url))
 					_linksTo.Add(url);
@@ -164,7 +190,7 @@ namespace WebCrawler
 
 		public string[] GetLinksFrom()
 		{
-			lock (_linksLock)
+			lock (_lock)
 			{
 				return _linksFrom.ToArray();
 			}
@@ -172,13 +198,11 @@ namespace WebCrawler
 
 		public string[] GetLinksTo()
 		{
-			lock (_linksLock)
+			lock (_lock)
 			{
 				return _linksTo.ToArray();
 			}
 		}
-
-		public event PropertyChangedEventHandler PropertyChanged;
 
 		public URL(string url)
 			: this(url, 0, URLStatus.Default)
@@ -192,17 +216,19 @@ namespace WebCrawler
 
 		public URL(string url, int depth, URLStatus status)
 		{
-			Status = status;
-			Url = url;
-			MimeType = "";
-			Notes = "";
-			Depth = depth;
+			_status = status;
+			_url = url;
+			_mimeType = "";
+			_notes = "";
+			_depth = depth;
 		}
 
-		private void NotifyPropertyChanged(string name)
+		// Tells the owning collection that this row changed and needs repainting (no-op until it has an owner).
+		private void Changed()
 		{
-			if (PropertyChanged != null)
-				PropertyChanged(this, new PropertyChangedEventArgs(name));
+			URLCollection owner = Owner;
+			if (owner != null)
+				owner.MarkChanged(this);
 		}
 	}
 

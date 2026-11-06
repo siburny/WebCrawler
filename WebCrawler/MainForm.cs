@@ -57,7 +57,7 @@ namespace WebCrawler
                 return;
             }
 
-            if (collection.Collection.Count > 0)
+            if (collection.Count() > 0)
                 ResetCollection();
             collection.Add(text);
 
@@ -86,7 +86,10 @@ namespace WebCrawler
             // Unbind the grid from the old results *first*: while it is still bound, rebinding makes it
             // re-format its current cell, and that lookup must not hit the new (empty) collection.
             urlDataGridView.DataSource = null;
-            collection = new URLCollection(urlDataGridView);
+            // Threads of the old scan that are still winding down get no more work and their results are dropped.
+            if (collection != null)
+                collection.Detach();
+            collection = new URLCollection();
             urlDataGridView.DataSource = collection.Collection;
         }
 
@@ -149,13 +152,13 @@ namespace WebCrawler
         {
             if (!Settings.Instance.Load())
                 Settings.Instance.Save();
-            collection = new URLCollection(urlDataGridView);
+            collection = new URLCollection();
             urlDataGridView.AutoGenerateColumns = false;
             urlDataGridView.DataSource = collection.Collection;
 
             ParseArguments(args);
 
-            if (collection.Collection.Count > 0)
+            if (collection.Count() > 0)
                 StartLoadedList();
         }
 
@@ -255,18 +258,26 @@ namespace WebCrawler
 
         private void refreshTimer_Tick(object sender, EventArgs e)
         {
+            if (collection == null)
+                return;
+
+            // Worker threads never touch the grid; this is where their results reach it (a few ms of work per tick).
+            // It keeps running after the scan ends so the last updates still show up.
+            collection.SyncView();
+
             if (crawling)
             {
+                URLCounts counts = collection.GetCounts();
                 StringBuilder sb = new StringBuilder();
-                sb.Append("URLs: " + collection.Count().ToString());
+                sb.Append("URLs: " + counts.Total.ToString());
                 sb.Append(" | ");
-                sb.Append("Processed: " + collection.Count(x => x.Status >= URLStatus.Done));
+                sb.Append("Processed: " + counts.Processed.ToString());
                 sb.Append(" | ");
-                sb.Append("Redirected: " + collection.Count(x => x.Status == URLStatus.Redirected));
+                sb.Append("Redirected: " + counts.Redirected.ToString());
                 sb.Append(" | ");
-                sb.Append("Warnings: " + collection.Count(x => x.Status == URLStatus.Warning));
+                sb.Append("Warnings: " + counts.Warnings.ToString());
                 sb.Append(" | ");
-                sb.Append("Errors: " + collection.Count(x => x.Status == URLStatus.Error));
+                sb.Append("Errors: " + counts.Errors.ToString());
                 toolStripStatusLabelTotalURLs.Text = sb.ToString();
 
                 if (collection.IsAllDone())
@@ -283,10 +294,13 @@ namespace WebCrawler
 
         private void SaveReport(bool console = false)
         {
+            // The report is built from a snapshot of the real data, not from the grid's list (which can trail slightly).
+            URL[] urls = collection.Snapshot();
+
             if (console)
             {
                 Console.WriteLine("URL".PadRight(100, ' ') + "Status".PadRight(10, ' ') + "HTTP".PadRight(6, ' ') + "Time Taken");
-                foreach (URL url in collection.Collection)
+                foreach (URL url in urls)
                 {
                     Console.WriteLine(url.Url.ToString().PadRight(100, ' ').Substring(0, 98) + "  " + url.Status.ToString().PadRight(10, ' ') + FormatStatusCode(url).PadRight(6, ' ') + url.TimeTakenAll(" | "));
                 }
@@ -300,7 +314,7 @@ namespace WebCrawler
 
                 // One "Time Taken" column per measurement, so every row has the same number of columns
                 // and Status / Highlight / HTTP Status always sit in the same place.
-                int measurements = Math.Max(1, collection.Collection.Select(x => x.TimeTakenAttempts).DefaultIfEmpty(0).Max());
+                int measurements = Math.Max(1, urls.Select(x => x.TimeTakenAttempts).DefaultIfEmpty(0).Max());
 
                 using (StreamWriter file = new StreamWriter(this.reportName))
                 {
@@ -313,7 +327,7 @@ namespace WebCrawler
                     header.Add("HTTP Status");
                     file.WriteLine(string.Join(separator, header.Select(f => csv ? CsvField(f) : f)));
 
-                    foreach (URL url in collection.Collection)
+                    foreach (URL url in urls)
                     {
                         List<string> fields = new List<string>();
                         fields.Add(url.Url.ToString());
@@ -408,15 +422,19 @@ namespace WebCrawler
 
         private void Start()
         {
-            // Read the setting on every start so a change made in the Settings dialog applies to the next crawl.
-            int numProcesses = Math.Max(1, Settings.Instance.MaxProcesses);
+            Uri startingUri = collection.GetStartingUri();
+            if (startingUri == null)
+                throw new InvalidOperationException("There is no valid http/https URL to start crawling from.");
+
+            // The settings are copied once per crawl (a change made in the Settings dialog applies to the next crawl)
+            // and shared read-only by all worker threads. Workers wait for work on their own, so no staggered start.
+            CrawlOptions options = new CrawlOptions(startingUri);
+            int numProcesses = options.MaxConnections;
             childProcesses = new ChildThread[numProcesses];
             for (int i = 0; i < numProcesses; i++)
-            {
-                childProcesses[i] = new ChildThread(i, collection);
+                childProcesses[i] = new ChildThread(i, collection, options);
+            for (int i = 0; i < numProcesses; i++)
                 childProcesses[i].Start();
-                Thread.Sleep(100);
-            }
         }
 
         private void Stop()
@@ -510,7 +528,7 @@ namespace WebCrawler
                 {
                     collection.Add(url);
                 }
-                if (collection.Collection.Count > 0)
+                if (collection.Count() > 0)
                     StartLoadedList();
             }
         }

@@ -6,24 +6,51 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Web;
-using System.Windows.Forms;
 
 namespace WebCrawler
 {
+    /// <summary>
+    /// The settings one crawl runs with, copied when the crawl starts. Worker threads only ever read this copy,
+    /// so changing the Settings dialog while a crawl is running can never change (or corrupt) what they see.
+    /// </summary>
+    sealed class CrawlOptions
+    {
+        public readonly Uri StartingUri;
+        public readonly int MaxDepth;
+        public readonly int MaxMeasurements;
+        public readonly bool QuickScan;
+        public readonly int MaxConnections;
+        public readonly string[] ExcludeRules;
+        public readonly SettingsHighlightRule[] HighlightRules;
+
+        public CrawlOptions(Uri startingUri)
+        {
+            Settings settings = Settings.Instance;
+            StartingUri = startingUri;
+            MaxDepth = settings.MaxDepth;
+            MaxMeasurements = settings.MaxMeasurements;
+            QuickScan = settings.QuickScan;
+            MaxConnections = Math.Max(1, settings.MaxProcesses);
+            ExcludeRules = (settings.ExcludeRules ?? new List<string>()).Where(rule => !string.IsNullOrEmpty(rule)).ToArray();
+            HighlightRules = (settings.HighlightRules ?? new List<SettingsHighlightRule>()).ToArray();
+        }
+    }
+
     class ChildThread
     {
         // Upper bound for page/error-body text copied into the Notes column.
         private const int MaxNotesBodyChars = 4000;
 
-        private int maximumDepth = Settings.Instance.MaxDepth;
-        private int maximumMeasurements = Settings.Instance.MaxMeasurements;
-        private bool quickScan = Settings.Instance.QuickScan;
-        private Thread childThread;
+        // Text bodies larger than this are only read up to this size (a link checker has no use for the rest).
+        private const int MaxBodyBytes = 10 * 1024 * 1024;
+
+        private readonly CrawlOptions options;
+        private readonly Thread childThread;
+        private readonly URLCollection collection;
+        private readonly int index;
+        private readonly ManualResetEvent stopSignal = new ManualResetEvent(false);
+        private volatile bool stopping = false;
         private int currentDepth;
-        private Uri startingUri;
-        private URLCollection collection;
-        private bool stopping = false;
-        private int index;
 
         public bool isRunning
         {
@@ -33,15 +60,17 @@ namespace WebCrawler
             }
         }
 
-        public ChildThread(int _index, URLCollection _collection)
+        public ChildThread(int _index, URLCollection _collection, CrawlOptions _options)
         {
             collection = _collection;
             index = _index;
-            startingUri = collection.GetStartingUri();
-            if (startingUri == null)
+            options = _options;
+            if (options.StartingUri == null)
                 throw new InvalidOperationException("There is no valid http/https URL to start crawling from.");
             this.childThread = new Thread(new ThreadStart(ChildThreadProcess));
             this.childThread.Name = "Child Process #" + (index + 1).ToString();
+            // A request that is still in flight must never keep the process alive after the window was closed.
+            this.childThread.IsBackground = true;
         }
 
         public void Start()
@@ -51,30 +80,38 @@ namespace WebCrawler
 
         public void Stop()
         {
-            //if (this.childThread.ThreadState == ThreadState.Running)
             this.stopping = true;
-            //ThreadPool.QueueUserWorkItem(new WaitCallback(delegate { this.childThread.Join(15000); }));
+            // Interrupts the pauses between requests and the wait for new work, so a stop takes effect at once.
+            this.stopSignal.Set();
+            this.collection.WakeWaiters();
+        }
+
+        // Sleeps, but wakes up immediately when the thread is asked to stop.
+        private void Pause(int milliseconds)
+        {
+            stopSignal.WaitOne(milliseconds);
         }
 
         public void ChildThreadProcess()
         {
             string buffer;
 
-            while (true)
+            while (!this.stopping)
             {
-                if (this.stopping)
-                    break;
-
                 // Reset vars
                 buffer = "";
                 currentDepth = -1;
-                URL url = collection.GetNext();
 
-                // if nothing to check, wait
+                // Blocks until there is something to check (or the crawl is stopped); no polling.
+                URL url = collection.GetNext(1000);
                 if (url == null)
-                {
-                    Thread.Sleep(1000);
                     continue;
+
+                if (this.stopping)
+                {
+                    // Asked to stop while waking up with a URL in hand: give it back instead of leaving it half-done.
+                    url.Status = URLStatus.Default;
+                    break;
                 }
 
                 currentDepth = url.Depth;
@@ -92,24 +129,24 @@ namespace WebCrawler
                     }
 
                     // Exclude rules must be honoured *before* anything is requested.
-                    if (Filter.IsExcluded(url.Url))
+                    if (Filter.IsExcluded(url.Url, options.ExcludeRules))
                     {
                         url.Status = URLStatus.Skipped;
                         url.Notes = "Excluded by rule";
                         continue;
                     }
 
-                    DateTime start = DateTime.Now;
+                    System.Diagnostics.Stopwatch timer = System.Diagnostics.Stopwatch.StartNew();
 
                     // Quick scan sends HEAD requests: status, type and size only. The body is never read, so
                     // links are not followed and highlight rules are not evaluated in this mode.
                     // Many servers reject HEAD even though GET works, so those answers fall back to a normal GET.
                     HttpWebResponse response = null;
-                    if (quickScan)
+                    if (options.QuickScan)
                     {
                         try
                         {
-                            response = SendRequest(urlCheck, "HEAD");
+                            response = SendRequest(urlCheck, "HEAD", options.MaxConnections);
                         }
                         catch (WebException headError)
                         {
@@ -120,40 +157,40 @@ namespace WebCrawler
                         }
                     }
                     if (response == null)
-                        response = SendRequest(urlCheck, "GET");
+                        response = SendRequest(urlCheck, "GET", options.MaxConnections);
 
                     using (response)
                     {
                         url.StatusCode = (int)response.StatusCode;
-                        url.MimeType = response.ContentType.Split(new char[] { ';' })[0].Trim();
+                        string mime = (response.ContentType ?? "").Split(new char[] { ';' })[0].Trim();
+                        url.MimeType = mime;
                         // -1 means the server sent no Content-Length (typical for chunked responses).
                         long contentLength = response.ContentLength;
-                        if (!quickScan)
-                        {
-                            using (MemoryStream body = new MemoryStream())
-                            {
-                                using (Stream responseStream = response.GetResponseStream())
-                                {
-                                    responseStream.CopyTo(body);
-                                }
-                                // Without the header, the size of what was actually received is the answer.
-                                if (contentLength < 0)
-                                    contentLength = body.Length;
 
-                                body.Position = 0;
-                                using (StreamReader readStream = new StreamReader(body))
-                                {
-                                    buffer = readStream.ReadToEnd();
-                                }
-                            }
+                        bool redirected = response.ResponseUri.ToString() != urlCheck.ToString();
+
+                        // Only a page that is going to be searched or parsed is downloaded. Images, PDFs, archives
+                        // and the like are judged by their response headers alone (status, type, size), and so are
+                        // redirects (the target gets its own row) and quick scans. Closing the response without
+                        // reading it abandons the rest of the transfer.
+                        bool readBody = !options.QuickScan && !redirected && Filter.IsTextual(mime);
+                        if (readBody)
+                        {
+                            long bytesRead;
+                            bool truncated;
+                            buffer = ReadBody(response, out bytesRead, out truncated);
+                            // Without the header, the size of what was actually received is the answer
+                            // (unless we stopped reading early, then it is unknown).
+                            if (contentLength < 0 && !truncated)
+                                contentLength = bytesRead;
                         }
-                        // Still unknown (e.g. quick scan without a header): leave it blank instead of showing -1.
+                        // Still unknown: leave it blank instead of showing -1.
                         url.ContentLength = contentLength >= 0 ? (long?)contentLength : null;
 
-                        url.TimeTaken = (DateTime.Now - start).TotalMilliseconds;
-                        if (!quickScan)
+                        url.TimeTaken = timer.Elapsed.TotalMilliseconds;
+                        if (readBody)
                         {
-                            foreach (SettingsHighlightRule rule in Settings.Instance.HighlightRules)
+                            foreach (SettingsHighlightRule rule in options.HighlightRules)
                                 if (rule.IsMatch(buffer))
                                 {
                                     url.HighlightColor = rule.GetHighlightColor();
@@ -161,15 +198,15 @@ namespace WebCrawler
                                 }
                         }
 
-                        if (response.ResponseUri.ToString() != urlCheck.ToString())
+                        if (redirected)
                         {
                             string redirectTarget = response.ResponseUri.ToString();
 
                             // Register the redirect target *before* this URL is marked Redirected (a "finished"
                             // status). Otherwise IsAllDone() can see every URL finished in between and end the crawl early.
-                            if (Filter.IsExcluded(redirectTarget))
+                            if (Filter.IsExcluded(redirectTarget, options.ExcludeRules))
                                 collection.Add(redirectTarget, currentDepth, url.Url, URLStatus.Skipped);
-                            else if (startingUri.IsBaseOf(response.ResponseUri))
+                            else if (options.StartingUri.IsBaseOf(response.ResponseUri))
                                 collection.Add(redirectTarget, currentDepth, url.Url);
                             else
                                 collection.Add(redirectTarget, currentDepth, url.Url, URLStatus.External);
@@ -181,7 +218,7 @@ namespace WebCrawler
                             url.ContentLength = null;
                             url.Status = URLStatus.Redirected;
                         }
-                        else if (!quickScan && Filter.IsMimeSupported(response.ContentType) && currentDepth < maximumDepth)
+                        else if (readBody && Filter.IsHtml(mime) && currentDepth < options.MaxDepth)
                         {
                             url.Status = URLStatus.Parsing;
 
@@ -236,9 +273,9 @@ namespace WebCrawler
                                     continue;
                                 }
 
-                                if (Filter.IsExcluded(linkUrl))
+                                if (Filter.IsExcluded(linkUrl, options.ExcludeRules))
                                     collection.Add(linkUrl, currentDepth + 1, url.Url, URLStatus.Skipped);
-                                else if (startingUri.IsBaseOf(resolved))
+                                else if (options.StartingUri.IsBaseOf(resolved))
                                     collection.Add(linkUrl, currentDepth + 1, url.Url);
                                 else
                                     collection.Add(linkUrl, currentDepth + 1, url.Url, URLStatus.External);
@@ -267,7 +304,7 @@ namespace WebCrawler
 
                     url.Notes = e.Message + Environment.NewLine + "-----------------------------------------------------------" + errorBody;
 
-                    Thread.Sleep(250);
+                    Pause(250);
                     continue;
                 }
                 catch (Exception e)
@@ -276,26 +313,30 @@ namespace WebCrawler
                     url.ContentLength = null;
                     url.Notes = e.Message + Environment.NewLine + "-----------------------------------------------------------" + Truncate(buffer);
 
-                    Thread.Sleep(250);
+                    Pause(250);
                     continue;
                 }
 
-                if (!(url.Status == URLStatus.Error || url.Status == URLStatus.External || url.Status == URLStatus.Redirected || url.Status == URLStatus.Skipped || url.Status == URLStatus.Warning))
+                URLStatus status = url.Status;
+                if (!(status == URLStatus.Error || status == URLStatus.External || status == URLStatus.Redirected || status == URLStatus.Skipped || status == URLStatus.Warning))
                 {
-                    if (url.TimeTakenAttempts >= maximumMeasurements)
+                    if (url.TimeTakenAttempts >= options.MaxMeasurements)
                         url.Status = URLStatus.Done;
                     else
                         url.Status = URLStatus.Default;
                 }
-                Application.DoEvents();
-                Thread.Sleep(250);
+                Pause(250);
             }
         }
 
-        private static HttpWebResponse SendRequest(Uri uri, string method)
+        private static HttpWebResponse SendRequest(Uri uri, string method, int connectionLimit)
         {
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+            // .NET Framework allows only 2 simultaneous connections per host by default, which would quietly
+            // reduce any number of worker threads above 2 to 2 (and the waiting would count against the timeout).
+            if (request.ServicePoint.ConnectionLimit < connectionLimit)
+                request.ServicePoint.ConnectionLimit = connectionLimit;
             request.Method = method;
             request.AllowAutoRedirect = true;
             request.Timeout = 60000;
@@ -319,6 +360,40 @@ namespace WebCrawler
                     return true;
                 default:
                     return false;
+            }
+        }
+
+        /// <summary>
+        /// Reads the response body as text, at most <see cref="MaxBodyBytes"/> bytes of it.
+        /// <paramref name="bytesRead"/> is the number of bytes received; <paramref name="truncated"/> tells whether the
+        /// body was cut off at the limit.
+        /// </summary>
+        private static string ReadBody(WebResponse response, out long bytesRead, out bool truncated)
+        {
+            truncated = false;
+            using (MemoryStream body = new MemoryStream())
+            {
+                using (Stream stream = response.GetResponseStream())
+                {
+                    byte[] chunk = new byte[16 * 1024];
+                    int read;
+                    while ((read = stream.Read(chunk, 0, chunk.Length)) > 0)
+                    {
+                        body.Write(chunk, 0, read);
+                        if (body.Length >= MaxBodyBytes)
+                        {
+                            truncated = true;
+                            break;
+                        }
+                    }
+                }
+
+                bytesRead = body.Length;
+                body.Position = 0;
+                using (StreamReader reader = new StreamReader(body))
+                {
+                    return reader.ReadToEnd();
+                }
             }
         }
 
@@ -355,24 +430,42 @@ namespace WebCrawler
 
     static class Filter
     {
-        public static bool IsExcluded(string url)
+        public static bool IsExcluded(string url, string[] rules)
         {
-            for (int i = 0; i < Settings.Instance.ExcludeRules.Count; i++)
+            for (int i = 0; i < rules.Length; i++)
             {
-                if (url.Contains(Settings.Instance.ExcludeRules[i]))
+                if (url.Contains(rules[i]))
                     return true;
             }
             return false;
         }
 
-        public static bool IsMimeSupported(string mime)
+        /// <summary>Pages that are searched for links to follow.</summary>
+        public static bool IsHtml(string mime)
         {
-            if (mime.StartsWith("text/"))
+            return mime.Equals("text/html", StringComparison.OrdinalIgnoreCase)
+                || mime.Equals("application/xhtml+xml", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>Responses whose body is text, i.e. worth downloading to evaluate highlight rules (and, for HTML, links).</summary>
+        public static bool IsTextual(string mime)
+        {
+            if (mime.StartsWith("text/", StringComparison.OrdinalIgnoreCase))
                 return true;
-            else if (mime == "application/x-javascript")
-                return false;
-            else
-                return false;
+
+            switch (mime.ToLowerInvariant())
+            {
+                case "application/xhtml+xml":
+                case "application/xml":
+                case "application/json":
+                case "application/javascript":
+                case "application/x-javascript":
+                case "application/ecmascript":
+                    return true;
+            }
+
+            return mime.EndsWith("+xml", StringComparison.OrdinalIgnoreCase)
+                || mime.EndsWith("+json", StringComparison.OrdinalIgnoreCase);
         }
 
         internal static bool IsValid(string url)
