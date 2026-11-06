@@ -70,6 +70,8 @@ public sealed class SettingsTests : IDisposable
         s.MaxDepth = 3;
         s.MaxMeasurements = 2;
         s.QuickScan = true;
+        s.RequestDelayMs = 1500;
+        s.UserAgent = "MyChecker/2.0";
         s.ExcludeRules = new List<string> { "/logout", "café \"quoted\"" };
         s.HighlightRules = new List<SettingsHighlightRule> { new SettingsHighlightRule { Expression = "foo.*bar", HighlightColor = "0x00ff00" } };
         s.Save();
@@ -82,6 +84,8 @@ public sealed class SettingsTests : IDisposable
         Assert.Equal(3, loaded.MaxDepth);
         Assert.Equal(2, loaded.MaxMeasurements);
         Assert.True(loaded.QuickScan);
+        Assert.Equal(1500, loaded.RequestDelayMs);
+        Assert.Equal("MyChecker/2.0", loaded.UserAgent);
         Assert.Equal(new[] { "/logout", "café \"quoted\"" }, loaded.ExcludeRules);
         Assert.Single(loaded.HighlightRules);
         Assert.True(loaded.HighlightRules[0].IsMatch("xxFOOyyBARzz"));
@@ -180,6 +184,17 @@ public sealed class SettingsTests : IDisposable
         Assert.Equal(5, Settings.Instance.MaxProcesses);
         Assert.Empty(Settings.Instance.ExcludeRules);
         Assert.Empty(Settings.Instance.HighlightRules);
+        Assert.Equal(250, Settings.Instance.RequestDelayMs);
+        Assert.Equal("", Settings.Instance.UserAgent);
+    }
+
+    [Fact]
+    public void NullUserAgentInTheFileMeansTheDefault()
+    {
+        WriteUserJson("{\"UserAgent\":null}");
+
+        Assert.True(Settings.Instance.Load());
+        Assert.Equal("", Settings.Instance.UserAgent);
     }
 
     [Fact]

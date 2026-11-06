@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace WebCrawler.Tests;
 
@@ -24,14 +24,15 @@ public sealed class Crawl : IDisposable
         crawler.Start();
     }
 
-    public bool WaitUntilDone(int seconds = 30)
+    /// <summary>Waits (without blocking a thread: the tests run on few) until every URL has a final status.</summary>
+    public async Task<bool> WaitUntilDoneAsync(int seconds = 30)
     {
         DateTime end = DateTime.UtcNow.AddSeconds(seconds);
         while (DateTime.UtcNow < end)
         {
             if (Urls.IsAllDone())
                 return true;
-            Thread.Sleep(20);
+            await Task.Delay(20);
         }
         return Urls.IsAllDone();
     }
@@ -47,9 +48,17 @@ public sealed class Crawl : IDisposable
     }
 
     /// <summary>Waits until every worker has actually finished (after <see cref="Stop"/>).</summary>
-    public bool WaitUntilStopped(int seconds = 10)
+    public async Task<bool> WaitUntilStoppedAsync(int seconds = 10)
     {
-        return crawler.Completion.Wait(TimeSpan.FromSeconds(seconds));
+        try
+        {
+            await crawler.Completion.WaitAsync(TimeSpan.FromSeconds(seconds));
+            return true;
+        }
+        catch (TimeoutException)
+        {
+            return false;
+        }
     }
 
     public void Dispose()

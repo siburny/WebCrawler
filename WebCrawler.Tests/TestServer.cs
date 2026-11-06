@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -36,6 +37,9 @@ public sealed class TestServer : IAsyncLifetime
     /// <summary>Every request received, as "METHOD /path".</summary>
     public ConcurrentQueue<string> Requests { get; } = new ConcurrentQueue<string>();
 
+    /// <summary>Every request received, with the moment it arrived and the User-Agent it carried.</summary>
+    public ConcurrentQueue<RecordedRequest> Log { get; } = new ConcurrentQueue<RecordedRequest>();
+
     public async Task InitializeAsync()
     {
         WebApplicationBuilder builder = WebApplication.CreateSlimBuilder();
@@ -59,6 +63,7 @@ public sealed class TestServer : IAsyncLifetime
     {
         string path = c.Request.Path.Value;
         Requests.Enqueue(c.Request.Method + " " + path);
+        Log.Enqueue(new RecordedRequest(c.Request.Method, path, c.Request.Headers.UserAgent.ToString(), Stopwatch.GetTimestamp()));
 
         // Some servers answer HEAD with "method not allowed" although GET works.
         if (c.Request.Method == "HEAD" && path == "/headfail")
@@ -76,6 +81,9 @@ public sealed class TestServer : IAsyncLifetime
             case "/ok2":
             case "/headfail":
                 await Send(c, 200, "text/html", OkBody);
+                break;
+            case "/few":
+                await Send(c, 200, "text/html", "<html><body><a href=\"/ok\">a</a><a href=\"/ok2\">b</a><a href=\"/image.png\">c</a></body></html>");
                 break;
             case "/missing":
                 await Send(c, 404, "text/html", "<html>nope-body</html>");
@@ -161,3 +169,6 @@ public sealed class TestServer : IAsyncLifetime
             await c.Response.Body.WriteAsync(body, 0, body.Length);
     }
 }
+
+/// <summary>One request as the scripted server saw it.</summary>
+public sealed record RecordedRequest(string Method, string Path, string UserAgent, long Timestamp);

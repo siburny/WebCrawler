@@ -7,7 +7,7 @@ status, HTTP code, content type, size and response time, so broken links, redire
 
 - Follows links on pages of the starting site up to a configurable depth; links to other sites are listed but not followed.
 - Reports errors (4xx/5xx, unreachable hosts, invalid addresses), redirects (with their target) and response times.
-- Several requests at once, with a short pause between the requests of each worker.
+- Several requests at once, but never more than a set number per second to one site (see **Politeness** below).
 - **Quick scan:** only sends `HEAD` requests (falling back to `GET` for servers that reject them). Fast, but pages are
   not read, so no links are followed.
 - **Ignore list:** addresses containing one of these texts are listed as skipped and never requested.
@@ -63,11 +63,21 @@ settings), otherwise in `%AppData%\WebCrawler\config.json`.
 | `MaxDepth` | 5 | How many links deep from the starting address pages are searched for further links. |
 | `MaxMeasurements` | 1 | How many times each address is requested (the shown time is the average). |
 | `QuickScan` | false | Use `HEAD` requests only. |
+| `RequestDelayMs` | 250 | Least time in milliseconds between two requests to the same site, however many connections are used (250 = at most 4 requests per second). 0 removes the limit. |
+| `UserAgent` | empty | The `User-Agent` header to send. Empty means `Mozilla/5.0 (compatible; WebCrawler/<version>)`. |
 | `ExcludeRules` | none | Texts; addresses containing one are skipped (case-sensitive). |
 | `HighlightRules` | none | `Expression` (regular expression, case-insensitive) and `HighlightColor` (for example `0xff8000`). |
 
 Settings saved by earlier versions (`config.xml` next to the program) are imported the first time the program starts.
 A `config.json` that cannot be read is renamed to `config.json.bad` and the defaults are used.
+
+## Politeness
+
+- Every request carries a `User-Agent` header (many sites refuse requests without one). Set `UserAgent` to use your own.
+- Requests to one site are spaced at least `RequestDelayMs` apart, whatever `MaxProcesses` is. More connections then
+  mainly help when pages are slow to answer; lower the delay (or set it to 0) to scan a site of your own faster.
+- `robots.txt` is not read: the program checks every address of the site you give it. Only use it on sites you may check.
+- TLS versions are left to the operating system, so TLS 1.3 works.
 
 ## Project layout
 

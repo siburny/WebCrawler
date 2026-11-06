@@ -14,6 +14,15 @@ public sealed class CrawlOptions
     public IReadOnlyList<string> ExcludeRules { get; }
     public IReadOnlyList<SettingsHighlightRule> HighlightRules { get; }
 
+    /// <summary>Least time between two requests to the same web site, however many connections there are.</summary>
+    public TimeSpan RequestDelay { get; }
+
+    /// <summary>The User-Agent header sent with every request.</summary>
+    public string UserAgent { get; }
+
+    /// <summary>What the program calls itself when the settings name nothing else. Many sites refuse requests that have no User-Agent.</summary>
+    public static string DefaultUserAgent { get; } = CreateDefaultUserAgent();
+
     public CrawlOptions(Uri startingUri)
     {
         ArgumentNullException.ThrowIfNull(startingUri);
@@ -26,5 +35,13 @@ public sealed class CrawlOptions
         MaxConnections = Math.Max(1, settings.MaxProcesses);
         ExcludeRules = (settings.ExcludeRules ?? new List<string>()).Where(rule => !string.IsNullOrEmpty(rule)).ToArray();
         HighlightRules = (settings.HighlightRules ?? new List<SettingsHighlightRule>()).ToArray();
+        RequestDelay = TimeSpan.FromMilliseconds(Math.Max(0, settings.RequestDelayMs));
+        UserAgent = string.IsNullOrWhiteSpace(settings.UserAgent) ? DefaultUserAgent : settings.UserAgent.Trim();
+    }
+
+    private static string CreateDefaultUserAgent()
+    {
+        Version version = typeof(CrawlOptions).Assembly.GetName().Version ?? new Version(1, 0, 0);
+        return $"Mozilla/5.0 (compatible; WebCrawler/{version.Major}.{version.Minor}.{Math.Max(0, version.Build)})";
     }
 }

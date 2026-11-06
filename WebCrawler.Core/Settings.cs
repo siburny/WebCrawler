@@ -37,6 +37,12 @@ public sealed class Settings
     public List<string> ExcludeRules { get; set; }
     public List<SettingsHighlightRule> HighlightRules { get; set; }
 
+    /// <summary>Least time in milliseconds between two requests to the same web site, however many connections there are. 0 = no limit.</summary>
+    public int RequestDelayMs { get; set; }
+
+    /// <summary>The User-Agent header to send. Empty = the program's own (see <see cref="CrawlOptions.DefaultUserAgent"/>).</summary>
+    public string UserAgent { get; set; }
+
     [JsonConstructor]
     private Settings()
     {
@@ -48,6 +54,8 @@ public sealed class Settings
         ExcludeRules = new List<string>();
         WarnOnRedirect = false;
         HighlightRules = new List<SettingsHighlightRule>();
+        RequestDelayMs = 250;
+        UserAgent = "";
     }
 
     /// <summary>
@@ -112,6 +120,7 @@ public sealed class Settings
 
             loaded.ExcludeRules = loaded.ExcludeRules ?? new List<string>();
             loaded.HighlightRules = loaded.HighlightRules ?? new List<SettingsHighlightRule>();
+            loaded.UserAgent = loaded.UserAgent ?? "";
             Instance = loaded;
             return true;
         }

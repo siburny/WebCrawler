@@ -17,12 +17,13 @@ public sealed class FullScanFixture : IAsyncLifetime
         await Server.InitializeAsync();
 
         Settings settings = Settings.CreateDefaults();
+        settings.RequestDelayMs = 0; // the local test server needs no politeness; the delay has its own tests
         settings.HighlightRules.Add(new SettingsHighlightRule { Expression = "café au lait", HighlightColor = "0xff0000" });
         settings.HighlightRules.Add(new SettingsHighlightRule { Expression = "“quoted”", HighlightColor = "0x00ff00" });
         Settings.Instance = settings;
 
         Result = new Crawl(Server.BaseUrl, "http://127.0.0.1:1/refused");
-        bool finished = await Task.Run(() => Result.WaitUntilDone());
+        bool finished = await Result.WaitUntilDoneAsync();
         Result.Stop();
         Assert.True(finished, "the crawl did not finish");
     }
@@ -48,10 +49,11 @@ public sealed class QuickScanFixture : IAsyncLifetime
 
         Settings settings = Settings.CreateDefaults();
         settings.QuickScan = true;
+        settings.RequestDelayMs = 0;
         Settings.Instance = settings;
 
         Result = new Crawl(new[] { "ok", "headfail", "missing", "boom", "moved", "image.png" }.Select(p => Server.BaseUrl + p).ToArray());
-        bool finished = await Task.Run(() => Result.WaitUntilDone());
+        bool finished = await Result.WaitUntilDoneAsync();
         Result.Stop();
         Assert.True(finished, "the crawl did not finish");
     }
@@ -300,7 +302,7 @@ public class StopTests
                 Assert.Equal(URLStatus.Default, slow.Status);
                 Assert.True(watch.Elapsed < TimeSpan.FromSeconds(4));
                 Assert.Equal("", slow.Notes);
-                Assert.True(crawl.WaitUntilStopped(), "the workers did not finish after the stop");
+                Assert.True(await crawl.WaitUntilStoppedAsync(), "the workers did not finish after the stop");
             }
         }
         finally
@@ -320,9 +322,9 @@ public class StopTests
         {
             using (Crawl crawl = new Crawl(server.BaseUrl + "ok"))
             {
-                Assert.True(crawl.WaitUntilDone());
+                Assert.True(await crawl.WaitUntilDoneAsync());
                 crawl.Stop();
-                Assert.True(crawl.WaitUntilStopped(), "idle workers did not finish after the stop");
+                Assert.True(await crawl.WaitUntilStoppedAsync(), "idle workers did not finish after the stop");
             }
         }
         finally

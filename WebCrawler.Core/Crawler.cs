@@ -18,9 +18,6 @@ public sealed class Crawler : IDisposable
     // Text bodies larger than this are only read up to this size (a link checker has no use for the rest).
     private const int MaxBodyBytes = 10 * 1024 * 1024;
 
-    // Pause between two requests of one worker, so a site is not hammered.
-    private static readonly TimeSpan RequestPause = TimeSpan.FromMilliseconds(250);
-
     private const string NotesSeparator = "-----------------------------------------------------------";
 
     // One client for every worker (and every crawl): it owns the connection pool. Cookies and automatic
@@ -31,6 +28,8 @@ public sealed class Crawler : IDisposable
     private readonly CrawlOptions _options;
     // Cancelled by Stop(), so a request that is still in flight ends at once instead of running to completion.
     private readonly CancellationTokenSource _cancel = new();
+    // Keeps requests to one site at least CrawlOptions.RequestDelay apart, however many workers there are.
+    private readonly HostThrottle _throttle = new();
     private Task[] _workers = Array.Empty<Task>();
     private int _started;
 
@@ -87,9 +86,7 @@ public sealed class Crawler : IDisposable
                     return;
                 }
 
-                bool requested = await CheckAsync(url, token).ConfigureAwait(false);
-                if (requested)
-                    await Task.Delay(RequestPause, token).ConfigureAwait(false);
+                await CheckAsync(url, token).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
@@ -99,11 +96,11 @@ public sealed class Crawler : IDisposable
     }
 
     /// <summary>
-    /// Checks one URL and records everything about it. Returns whether a request was made (the caller then
-    /// pauses). Anything that can go wrong with one URL is reported in that URL's row and never escapes, so one
-    /// bad address can never take down a worker. Only a stop escapes, as OperationCanceledException.
+    /// Checks one URL and records everything about it. Anything that can go wrong with one URL is reported in
+    /// that URL's row and never escapes, so one bad address can never take down a worker. Only a stop escapes,
+    /// as OperationCanceledException.
     /// </summary>
-    private async Task<bool> CheckAsync(URL url, CancellationToken token)
+    private async Task CheckAsync(URL url, CancellationToken token)
     {
         string body = "";
         int depth = url.Depth;
@@ -114,7 +111,7 @@ public sealed class Crawler : IDisposable
             {
                 url.Notes = "Invalid URL: only absolute http:// or https:// URLs can be checked.";
                 url.Status = URLStatus.Error;
-                return false;
+                return;
             }
 
             // Exclude rules must be honoured *before* anything is requested.
@@ -122,10 +119,11 @@ public sealed class Crawler : IDisposable
             {
                 url.Notes = "Excluded by rule";
                 url.Status = URLStatus.Skipped;
-                return false;
+                return;
             }
 
-            long started = System.Diagnostics.Stopwatch.GetTimestamp();
+            // Measures the response time only: the wait for this site's turn (see SendAsync) is not counted.
+            System.Diagnostics.Stopwatch timer = System.Diagnostics.Stopwatch.StartNew();
 
             // Quick scan sends HEAD requests: status, type and size only. The body is never read, so
             // links are not followed and highlight rules are not evaluated in this mode.
@@ -133,14 +131,14 @@ public sealed class Crawler : IDisposable
             HttpResponseMessage? response = null;
             if (_options.QuickScan)
             {
-                response = await SendAsync(urlCheck, HttpMethod.Head, token).ConfigureAwait(false);
+                response = await SendAsync(urlCheck, HttpMethod.Head, timer, token).ConfigureAwait(false);
                 if (HeadRejected(response))
                 {
                     response.Dispose();
                     response = null;
                 }
             }
-            response ??= await SendAsync(urlCheck, HttpMethod.Get, token).ConfigureAwait(false);
+            response ??= await SendAsync(urlCheck, HttpMethod.Get, timer, token).ConfigureAwait(false);
 
             using (response)
             {
@@ -154,7 +152,7 @@ public sealed class Crawler : IDisposable
                     url.Notes = $"The remote server returned an error: ({(int)response.StatusCode}) {reason}."
                         + Environment.NewLine + NotesSeparator + await ReadErrorBodyAsync(response, token).ConfigureAwait(false);
                     url.Status = URLStatus.Error;
-                    return true;
+                    return;
                 }
 
                 url.StatusCode = (int)response.StatusCode;
@@ -183,7 +181,7 @@ public sealed class Crawler : IDisposable
                 // Still unknown: leave it blank instead of showing -1.
                 url.ContentLength = contentLength >= 0 ? contentLength : null;
 
-                url.TimeTaken = System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+                url.TimeTaken = timer.Elapsed.TotalMilliseconds;
                 if (readBody)
                 {
                     foreach (SettingsHighlightRule rule in _options.HighlightRules)
@@ -229,7 +227,7 @@ public sealed class Crawler : IDisposable
             url.ContentLength = null;
             url.Notes = DescribeError(e) + Environment.NewLine + NotesSeparator + Truncate(body);
             url.Status = URLStatus.Error;
-            return true;
+            return;
         }
 
         URLStatus status = url.Status;
@@ -238,7 +236,6 @@ public sealed class Crawler : IDisposable
             // Measured often enough? Otherwise it goes back in the queue for another timing.
             url.Status = url.TimeTakenAttempts >= _options.MaxMeasurements ? URLStatus.Done : URLStatus.Default;
         }
-        return true;
     }
 
     /// <summary>Adds every link of the page to the collection and records them on the page's row.</summary>
@@ -314,6 +311,9 @@ public sealed class Crawler : IDisposable
         // Lets pages declared as windows-1252, shift_jis and the like be read with the right encoding.
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
+        // TLS versions are deliberately left to the operating system (no SslProtocols / ServicePointManager
+        // setting), so TLS 1.3 works and newer versions need no code change.
+
         SocketsHttpHandler handler = new()
         {
             AllowAutoRedirect = true,
@@ -327,10 +327,26 @@ public sealed class Crawler : IDisposable
         return new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(60) };
     }
 
-    private static Task<HttpResponseMessage> SendAsync(Uri uri, HttpMethod method, CancellationToken token)
+    /// <summary>
+    /// Sends one request once it is this site's turn (see <see cref="CrawlOptions.RequestDelay"/>), identifying the
+    /// program in the User-Agent header. The time spent waiting for the turn is taken off <paramref name="timer"/>.
+    /// </summary>
+    private async Task<HttpResponseMessage> SendAsync(Uri uri, HttpMethod method, System.Diagnostics.Stopwatch timer, CancellationToken token)
     {
+        timer.Stop();
+        try
+        {
+            await _throttle.WaitAsync(uri.Authority, _options.RequestDelay, token).ConfigureAwait(false);
+        }
+        finally
+        {
+            timer.Start();
+        }
+
         HttpRequestMessage request = new(method, uri);
-        return Http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token);
+        // Not validated: whatever the user typed in the settings is sent as it is.
+        request.Headers.TryAddWithoutValidation("User-Agent", _options.UserAgent);
+        return await Http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false);
     }
 
     /// <summary>
