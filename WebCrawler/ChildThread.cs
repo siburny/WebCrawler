@@ -1,11 +1,10 @@
-﻿using CsQuery;
+﻿using AngleSharp.Html.Parser;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
-using System.Web;
 
 namespace WebCrawler
 {
@@ -222,27 +221,25 @@ namespace WebCrawler
                         {
                             url.Status = URLStatus.Parsing;
 
-                            CQ dom = CQ.Create(buffer);
+                            // AngleSharp decodes character references in attribute values while parsing,
+                            // so the hrefs below must not be HTML-decoded a second time.
+                            var dom = new HtmlParser().ParseDocument(buffer);
 
                             // Relative links are resolved against the page they appear on (or its <base href>),
                             // not against the URL the crawl started from.
                             Uri baseUri = response.ResponseUri;
-                            string baseHref = dom["base[href]"].Attr("href");
+                            string baseHref = dom.QuerySelector("base[href]")?.GetAttribute("href");
                             if (!string.IsNullOrWhiteSpace(baseHref))
                             {
                                 Uri customBase;
-                                if (Uri.TryCreate(baseUri, HttpUtility.HtmlDecode(baseHref.Trim()), out customBase)
+                                if (Uri.TryCreate(baseUri, baseHref.Trim(), out customBase)
                                     && (customBase.Scheme == Uri.UriSchemeHttp || customBase.Scheme == Uri.UriSchemeHttps))
                                     baseUri = customBase;
                             }
 
-                            List<IDomObject> links = dom["a"].ToList();
-                            foreach (IDomObject link in links)
+                            foreach (var link in dom.QuerySelectorAll("a[href]"))
                             {
-                                if (link.Attributes["href"] == null)
-                                    continue;
-
-                                string tempurl = HttpUtility.HtmlDecode(link.Attributes["href"].ToString());
+                                string tempurl = link.GetAttribute("href");
                                 if (string.IsNullOrWhiteSpace(tempurl) || !Filter.IsValid(tempurl))
                                     continue;
 
