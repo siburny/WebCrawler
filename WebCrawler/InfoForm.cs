@@ -8,8 +8,8 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
-namespace WebCrawler
-{
+namespace WebCrawler;
+
 	public sealed partial class InfoForm : Form
 	{
 		public readonly static InfoForm Instance = new InfoForm();
@@ -37,4 +37,3 @@ namespace WebCrawler
 			ShowDialog();
 		}
 	}
-}

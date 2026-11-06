@@ -12,10 +12,14 @@
     <Product>WebCrawler</Product>
     <Copyright>Copyright © 2009</Copyright>
     <Version>1.0.0</Version>
+    <!-- Read by the generated ApplicationConfiguration.Initialize(): sharp text and correct sizes on every monitor, at any scaling. -->
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ApplicationVisualStyles>true</ApplicationVisualStyles>
+    <ApplicationUseCompatibleTextRendering>false</ApplicationUseCompatibleTextRendering>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AngleSharp" Version="1.9.1" />
+    <ProjectReference Include="..\WebCrawler.Core\WebCrawler.Core.csproj" />
   </ItemGroup>
 
   <!-- Keeps the Visual Studio resource designer wired to the generated Resources class. -->
