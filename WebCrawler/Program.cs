@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows.Forms;
 
 namespace WebCrawler
@@ -22,6 +23,9 @@ namespace WebCrawler
             {
                 FreeConsole();
             }
+
+            // Lets pages declared as windows-1252, shift_jis and the like be read with the right encoding.
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);

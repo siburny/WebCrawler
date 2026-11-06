@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Text;
 using System.Threading;
 
 namespace WebCrawler
@@ -43,11 +45,20 @@ namespace WebCrawler
         // Text bodies larger than this are only read up to this size (a link checker has no use for the rest).
         private const int MaxBodyBytes = 10 * 1024 * 1024;
 
+        private const string NotesSeparator = "-----------------------------------------------------------";
+
+        // One client for every worker thread (and every crawl): it owns the connection pool. Cookies and automatic
+        // decompression are off, so requests behave like the old HttpWebRequest ones: no session state leaks from
+        // one URL to the next and sizes are the on-the-wire sizes.
+        private static readonly HttpClient Http = CreateHttpClient();
+
         private readonly CrawlOptions options;
         private readonly Thread childThread;
         private readonly URLCollection collection;
         private readonly int index;
         private readonly ManualResetEvent stopSignal = new ManualResetEvent(false);
+        // Cancelled by Stop(), so a request that is still in flight ends at once instead of running to completion.
+        private readonly CancellationTokenSource cancel = new CancellationTokenSource();
         private volatile bool stopping = false;
         private int currentDepth;
 
@@ -80,6 +91,7 @@ namespace WebCrawler
         public void Stop()
         {
             this.stopping = true;
+            this.cancel.Cancel();
             // Interrupts the pauses between requests and the wait for new work, so a stop takes effect at once.
             this.stopSignal.Set();
             this.collection.WakeWaiters();
@@ -140,33 +152,45 @@ namespace WebCrawler
                     // Quick scan sends HEAD requests: status, type and size only. The body is never read, so
                     // links are not followed and highlight rules are not evaluated in this mode.
                     // Many servers reject HEAD even though GET works, so those answers fall back to a normal GET.
-                    HttpWebResponse response = null;
+                    HttpResponseMessage response = null;
                     if (options.QuickScan)
                     {
-                        try
+                        response = SendRequest(urlCheck, HttpMethod.Head);
+                        if (HeadRejected(response))
                         {
-                            response = SendRequest(urlCheck, "HEAD", options.MaxConnections);
-                        }
-                        catch (WebException headError)
-                        {
-                            if (!HeadRejected(headError))
-                                throw;
-                            if (headError.Response != null)
-                                headError.Response.Close();
+                            response.Dispose();
+                            response = null;
                         }
                     }
                     if (response == null)
-                        response = SendRequest(urlCheck, "GET", options.MaxConnections);
+                        response = SendRequest(urlCheck, HttpMethod.Get);
 
                     using (response)
                     {
+                        // HttpClient does not throw for 4xx/5xx answers, so they are reported here. Like a failed request
+                        // they get no timing and no MIME type, only the status code and the start of the error page.
+                        if ((int)response.StatusCode >= 400)
+                        {
+                            url.Status = URLStatus.Error;
+                            url.ContentLength = null;
+                            url.StatusCode = (int)response.StatusCode;
+                            string reason = string.IsNullOrEmpty(response.ReasonPhrase) ? response.StatusCode.ToString() : response.ReasonPhrase;
+                            url.Notes = "The remote server returned an error: (" + (int)response.StatusCode + ") " + reason + "."
+                                + Environment.NewLine + NotesSeparator + ReadErrorBody(response);
+
+                            Pause(250);
+                            continue;
+                        }
+
                         url.StatusCode = (int)response.StatusCode;
-                        string mime = (response.ContentType ?? "").Split(new char[] { ';' })[0].Trim();
+                        string mime = (RawContentType(response) ?? "").Split(new char[] { ';' })[0].Trim();
                         url.MimeType = mime;
                         // -1 means the server sent no Content-Length (typical for chunked responses).
-                        long contentLength = response.ContentLength;
+                        long contentLength = response.Content.Headers.ContentLength ?? -1;
 
-                        bool redirected = response.ResponseUri.ToString() != urlCheck.ToString();
+                        // Where the request ended up (HttpClient follows redirects itself).
+                        Uri finalUri = ResolveFinalUri(response);
+                        bool redirected = finalUri.ToString() != urlCheck.ToString();
 
                         // Only a page that is going to be searched or parsed is downloaded. Images, PDFs, archives
                         // and the like are judged by their response headers alone (status, type, size), and so are
@@ -199,13 +223,13 @@ namespace WebCrawler
 
                         if (redirected)
                         {
-                            string redirectTarget = response.ResponseUri.ToString();
+                            string redirectTarget = finalUri.ToString();
 
                             // Register the redirect target *before* this URL is marked Redirected (a "finished"
                             // status). Otherwise IsAllDone() can see every URL finished in between and end the crawl early.
                             if (Filter.IsExcluded(redirectTarget, options.ExcludeRules))
                                 collection.Add(redirectTarget, currentDepth, url.Url, URLStatus.Skipped);
-                            else if (options.StartingUri.IsBaseOf(response.ResponseUri))
+                            else if (options.StartingUri.IsBaseOf(finalUri))
                                 collection.Add(redirectTarget, currentDepth, url.Url);
                             else
                                 collection.Add(redirectTarget, currentDepth, url.Url, URLStatus.External);
@@ -227,7 +251,7 @@ namespace WebCrawler
 
                             // Relative links are resolved against the page they appear on (or its <base href>),
                             // not against the URL the crawl started from.
-                            Uri baseUri = response.ResponseUri;
+                            Uri baseUri = finalUri;
                             string baseHref = dom.QuerySelector("base[href]")?.GetAttribute("href");
                             if (!string.IsNullOrWhiteSpace(baseHref))
                             {
@@ -282,33 +306,17 @@ namespace WebCrawler
                         }
                     }
                 }
-                catch (WebException e)
+                catch (OperationCanceledException) when (stopping)
                 {
-                    url.Status = URLStatus.Error;
-                    url.ContentLength = null;
-
-                    // HTTP errors (404, 500, ...) arrive as exceptions that still carry a response.
-                    // It must be disposed or its connection stays tied up.
-                    string errorBody = "";
-                    using (HttpWebResponse errorResponse = e.Response as HttpWebResponse)
-                    {
-                        if (errorResponse != null)
-                        {
-                            url.StatusCode = (int)errorResponse.StatusCode;
-                            errorBody = ReadErrorBody(errorResponse);
-                        }
-                    }
-
-                    url.Notes = e.Message + Environment.NewLine + "-----------------------------------------------------------" + errorBody;
-
-                    Pause(250);
-                    continue;
+                    // Stopped while a request was in flight: give the URL back instead of reporting a bogus error.
+                    url.Status = URLStatus.Default;
+                    break;
                 }
                 catch (Exception e)
                 {
                     url.Status = URLStatus.Error;
                     url.ContentLength = null;
-                    url.Notes = e.Message + Environment.NewLine + "-----------------------------------------------------------" + Truncate(buffer);
+                    url.Notes = DescribeError(e) + Environment.NewLine + NotesSeparator + Truncate(buffer);
 
                     Pause(250);
                     continue;
@@ -326,27 +334,55 @@ namespace WebCrawler
             }
         }
 
-        private static HttpWebResponse SendRequest(Uri uri, string method, int connectionLimit)
+        private static HttpClient CreateHttpClient()
         {
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-            // .NET Framework allows only 2 simultaneous connections per host by default, which would quietly
-            // reduce any number of worker threads above 2 to 2 (and the waiting would count against the timeout).
-            if (request.ServicePoint.ConnectionLimit < connectionLimit)
-                request.ServicePoint.ConnectionLimit = connectionLimit;
-            request.Method = method;
-            request.AllowAutoRedirect = true;
-            request.Timeout = 60000;
-            return (HttpWebResponse)request.GetResponse();
+            SocketsHttpHandler handler = new SocketsHttpHandler();
+            handler.AllowAutoRedirect = true;
+            handler.UseCookies = false;
+            handler.AutomaticDecompression = DecompressionMethods.None;
+            // A long crawl of one host should still notice DNS changes.
+            handler.PooledConnectionLifetime = TimeSpan.FromMinutes(2);
+
+            HttpClient client = new HttpClient(handler);
+            // Covers the wait for the response headers (the body is read afterwards, see ReadBody).
+            client.Timeout = TimeSpan.FromSeconds(60);
+            return client;
+        }
+
+        private HttpResponseMessage SendRequest(Uri uri, HttpMethod method)
+        {
+            HttpRequestMessage request = new HttpRequestMessage(method, uri);
+            return Http.Send(request, HttpCompletionOption.ResponseHeadersRead, cancel.Token);
+        }
+
+        /// <summary>
+        /// The address the response really came from. HttpClient follows redirects itself, but it refuses some
+        /// (https to http, for one) and hands back the 3xx answer instead; its Location header still says where it points.
+        /// </summary>
+        private static Uri ResolveFinalUri(HttpResponseMessage response)
+        {
+            Uri final = response.RequestMessage.RequestUri;
+            int code = (int)response.StatusCode;
+            if (code >= 300 && code < 400 && response.Headers.Location != null)
+            {
+                Uri target;
+                if (Uri.TryCreate(final, response.Headers.Location, out target)
+                    && (target.Scheme == Uri.UriSchemeHttp || target.Scheme == Uri.UriSchemeHttps))
+                    return target;
+            }
+            return final;
+        }
+
+        /// <summary>The Content-Type header exactly as the server sent it, or null when there is none.</summary>
+        private static string RawContentType(HttpResponseMessage response)
+        {
+            System.Net.Http.Headers.HeaderStringValues values;
+            return response.Content.Headers.NonValidated.TryGetValues("Content-Type", out values) ? values.ToString() : null;
         }
 
         /// <summary>True when a HEAD request was answered in a way that usually means "HEAD not supported here".</summary>
-        private static bool HeadRejected(WebException e)
+        private static bool HeadRejected(HttpResponseMessage response)
         {
-            HttpWebResponse response = e.Response as HttpWebResponse;
-            if (response == null)
-                return false;
-
             switch (response.StatusCode)
             {
                 case HttpStatusCode.BadRequest:
@@ -360,22 +396,41 @@ namespace WebCrawler
             }
         }
 
+        /// <summary>The text encoding named by the response's charset, or UTF-8 when it names none (or one we do not know).</summary>
+        private static Encoding GetEncoding(HttpContent content)
+        {
+            try
+            {
+                string charset = content.Headers.ContentType?.CharSet;
+                if (!string.IsNullOrWhiteSpace(charset))
+                    return Encoding.GetEncoding(charset.Trim().Trim('"'));
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (FormatException)
+            {
+            }
+            return Encoding.UTF8;
+        }
+
         /// <summary>
         /// Reads the response body as text, at most <see cref="MaxBodyBytes"/> bytes of it.
         /// <paramref name="bytesRead"/> is the number of bytes received; <paramref name="truncated"/> tells whether the
         /// body was cut off at the limit.
         /// </summary>
-        private static string ReadBody(WebResponse response, out long bytesRead, out bool truncated)
+        private string ReadBody(HttpResponseMessage response, out long bytesRead, out bool truncated)
         {
             truncated = false;
             using (MemoryStream body = new MemoryStream())
             {
-                using (Stream stream = response.GetResponseStream())
+                using (Stream stream = response.Content.ReadAsStream(cancel.Token))
                 {
                     byte[] chunk = new byte[16 * 1024];
                     int read;
                     while ((read = stream.Read(chunk, 0, chunk.Length)) > 0)
                     {
+                        cancel.Token.ThrowIfCancellationRequested();
                         body.Write(chunk, 0, read);
                         if (body.Length >= MaxBodyBytes)
                         {
@@ -387,7 +442,8 @@ namespace WebCrawler
 
                 bytesRead = body.Length;
                 body.Position = 0;
-                using (StreamReader reader = new StreamReader(body))
+                // The charset from the response headers decides how the bytes become text (a byte order mark wins over it).
+                using (StreamReader reader = new StreamReader(body, GetEncoding(response.Content), true))
                 {
                     return reader.ReadToEnd();
                 }
@@ -402,26 +458,34 @@ namespace WebCrawler
         }
 
         /// <summary>Reads (a bounded amount of) the body of an HTTP error response; never throws.</summary>
-        private static string ReadErrorBody(WebResponse response)
+        private string ReadErrorBody(HttpResponseMessage response)
         {
             try
             {
-                using (Stream stream = response.GetResponseStream())
+                using (Stream stream = response.Content.ReadAsStream(cancel.Token))
+                using (StreamReader reader = new StreamReader(stream, GetEncoding(response.Content), true))
                 {
-                    if (stream == null)
-                        return "";
-                    using (StreamReader reader = new StreamReader(stream))
-                    {
-                        char[] chunk = new char[MaxNotesBodyChars];
-                        int read = reader.Read(chunk, 0, chunk.Length);
-                        return read > 0 ? new string(chunk, 0, read) : "";
-                    }
+                    char[] chunk = new char[MaxNotesBodyChars];
+                    int read = reader.Read(chunk, 0, chunk.Length);
+                    return read > 0 ? new string(chunk, 0, read) : "";
                 }
             }
             catch (Exception)
             {
                 return "";
             }
+        }
+
+        /// <summary>The exception's message plus those of the exceptions inside it (HttpClient puts the real cause, e.g. "connection refused", there).</summary>
+        private static string DescribeError(Exception e)
+        {
+            StringBuilder text = new StringBuilder(e.Message);
+            for (Exception inner = e.InnerException; inner != null; inner = inner.InnerException)
+            {
+                if (!text.ToString().Contains(inner.Message))
+                    text.Append(" -> ").Append(inner.Message);
+            }
+            return text.ToString();
         }
     }
 
