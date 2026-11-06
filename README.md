@@ -14,6 +14,7 @@ status, HTTP code, content type, size and response time, so broken links, redire
 - **Highlight list:** regular expressions matched against the page text; matching rows get your colour.
 - Several measurements per address, to average out response times.
 - Saves a report as CSV (`.csv`), tab-separated text (any other extension) or prints it to the console.
+- **Find:** `Ctrl+F` (or the **Find** button) opens a small window that stays open while you search the list. **Find Next** selects the next row that contains all the words you typed (in the address, notes, content type, status or HTTP code), ignoring case, and starts again from the top after the last row.
 
 ## Requirements
 

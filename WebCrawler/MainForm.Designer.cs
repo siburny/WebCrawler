@@ -40,6 +40,7 @@
             this.toolStripButtonShowNextError = new System.Windows.Forms.ToolStripButton();
             this.toolStripButtonSettings = new System.Windows.Forms.ToolStripButton();
             this.toolStripButtonHighlight = new System.Windows.Forms.ToolStripButton();
+            this.toolStripButtonFind = new System.Windows.Forms.ToolStripButton();
             this.urlDataGridView = new System.Windows.Forms.DataGridView();
             this.refreshTimer = new System.Windows.Forms.Timer(this.components);
             this.panel1 = new System.Windows.Forms.Panel();
@@ -77,7 +78,8 @@
             this.toolStripSeparator1,
             this.toolStripButtonShowNextError,
             this.toolStripButtonSettings,
-            this.toolStripButtonHighlight});
+            this.toolStripButtonHighlight,
+            this.toolStripButtonFind});
             this.mainToolStrip.Location = new System.Drawing.Point(0, 0);
             this.mainToolStrip.Name = "mainToolStrip";
             this.mainToolStrip.Size = new System.Drawing.Size(1167, 25);
@@ -128,6 +130,16 @@
             this.toolStripButtonHighlight.Size = new System.Drawing.Size(121, 22);
             this.toolStripButtonHighlight.Text = "Show Next Highlight";
             this.toolStripButtonHighlight.Click += new System.EventHandler(this.toolStripButtonHighlight_Click);
+            // 
+            // toolStripButtonFind
+            // 
+            this.toolStripButtonFind.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.toolStripButtonFind.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButtonFind.Name = "toolStripButtonFind";
+            this.toolStripButtonFind.Size = new System.Drawing.Size(30, 22);
+            this.toolStripButtonFind.Text = "Find";
+            this.toolStripButtonFind.ToolTipText = "Find (Ctrl+F)";
+            this.toolStripButtonFind.Click += new System.EventHandler(this.toolStripButtonFind_Click);
             // 
             // urlDataGridView
             // 
@@ -407,6 +419,7 @@
 		private System.Windows.Forms.ToolStripButton toolStripButtonShowNextError;
 		private System.Windows.Forms.ToolStripButton toolStripButtonSettings;
 		private System.Windows.Forms.ToolStripButton toolStripButtonHighlight;
+		private System.Windows.Forms.ToolStripButton toolStripButtonFind;
         private System.Windows.Forms.ToolStripButton toolStripButtonLoadURLList;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
         private System.Windows.Forms.OpenFileDialog openFileDialog;

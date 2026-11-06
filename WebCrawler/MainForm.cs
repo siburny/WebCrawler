@@ -24,6 +24,12 @@ public partial class MainForm : Form
     private Image stopImage;
     private string checkButtonText;
 
+    // The Find window (created the first time it is needed) and the row/search its last successful search ended on,
+    // which tells a repeated Find Next from a new search.
+    private FindForm findForm;
+    private int lastFindRow = -1;
+    private string lastFindTerms = "";
+
     // The grid's row height and column widths are pixel values, which the DataGridView does not scale
     // with the display DPI on its own, so they are kept here in 96-DPI units and scaled in ApplyGridDpiScaling.
     private const int GridRowHeight = 18;
@@ -171,6 +177,7 @@ public partial class MainForm : Form
             collection.Detach();
         collection = new URLCollection();
         urlDataGridView.DataSource = collection.Collection;
+        lastFindRow = -1;
     }
 
     private void BeginCrawl()
@@ -566,6 +573,70 @@ public partial class MainForm : Form
         }
         else
             MessageBox.Show("Can't find any more errors.");
+    }
+
+    // Ctrl+F opens the Find window, wherever the focus is in this window.
+    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+    {
+        if (keyData == (Keys.Control | Keys.F))
+        {
+            ShowFindWindow();
+            return true;
+        }
+        return base.ProcessCmdKey(ref msg, keyData);
+    }
+
+    private void toolStripButtonFind_Click(object sender, EventArgs e)
+    {
+        ShowFindWindow();
+    }
+
+    private void ShowFindWindow()
+    {
+        if (findForm == null)
+        {
+            findForm = new FindForm();
+            findForm.Searcher = FindNext;
+        }
+        findForm.ShowFind(this);
+    }
+
+    // One Find Next: selects the next row that matches the search text and scrolls to it. Returns the text
+    // the Find window shows. The list keeps growing while a scan runs, so every search looks at the rows there are right now.
+    private string FindNext(string text)
+    {
+        string[] terms = UrlSearch.ParseTerms(text);
+        string termsKey = string.Join(" ", terms);
+        IReadOnlyList<URL> urls = collection.Collection;
+
+        int current = urlDataGridView.CurrentCell != null ? urlDataGridView.CurrentCell.RowIndex : -1;
+        // Repeating a search moves on from the row it just found; a new search, or a row picked by hand, starts at the selected row itself.
+        bool repeated = current >= 0 && current == lastFindRow && string.Equals(termsKey, lastFindTerms, StringComparison.OrdinalIgnoreCase);
+        int start = current < 0 ? 0 : (repeated ? current + 1 : current);
+
+        bool wrapped;
+        int found = UrlSearch.FindNext(urls, start, terms, out wrapped);
+        if (found < 0 || found >= urlDataGridView.RowCount)
+        {
+            lastFindRow = -1;
+            return "No matches found.";
+        }
+
+        SelectRow(found);
+        lastFindRow = found;
+        lastFindTerms = termsKey;
+        return "Row " + (found + 1).ToString(CultureInfo.CurrentCulture) + " of " + urls.Count.ToString(CultureInfo.CurrentCulture)
+            + (wrapped ? " (continued from the top)" : "");
+    }
+
+    // Makes the row the current, highlighted one; the list only scrolls when the row is not already fully in view.
+    private void SelectRow(int index)
+    {
+        int first = urlDataGridView.FirstDisplayedScrollingRowIndex;
+        if (first < 0 || index < first || index >= first + urlDataGridView.DisplayedRowCount(true))
+            urlDataGridView.FirstDisplayedScrollingRowIndex = Math.Max(0, index - 2);
+
+        urlDataGridView.CurrentCell = urlDataGridView.Rows[index].Cells[urlDataGridViewTextBoxColumn.Index];
     }
 
     private void toolStripButtonSettings_Click(object sender, EventArgs e)
