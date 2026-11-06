@@ -25,7 +25,7 @@ namespace WebCrawler;
 		{
         // Everything is validated first; the shared settings are only touched once all input is known to be good.
         List<SettingsHighlightRule> highlightRules;
-        if (comboBoxDepth.SelectedIndex == -1 || comboBoxThreads.SelectedIndex == -1 || !TryParseHighlightRules(textBoxHighlight.Text, out highlightRules))
+        if (comboBoxDepth.SelectedIndex == -1 || comboBoxThreads.SelectedIndex == -1 || !TryParseHighlightRules(textBoxHighlight.Text, out highlightRules) || !TryValidateCookies(textBoxCookies.Text))
         {
             e.Cancel = true;
             return;
@@ -36,8 +36,20 @@ namespace WebCrawler;
         // Whole new lists are assigned (never modified in place), so a crawl that is running keeps seeing a consistent list.
         Settings.Instance.ExcludeRules = textBoxIgnore.Text.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).ToList();
         Settings.Instance.HighlightRules = highlightRules;
+        Settings.Instance.Cookies = textBoxCookies.Text.Trim();
 
         Settings.Instance.Save();
+		}
+
+		// The cookies text must be NAME=VALUE entries (one per line); anything else is reported and the form stays open.
+		private bool TryValidateCookies(string text)
+		{
+			CookieList.Parse(text, out string error);
+			if (error == null)
+				return true;
+
+			MessageBox.Show("Make sure format of Cookies is valid (one NAME=VALUE per line)." + Environment.NewLine + error);
+			return false;
 		}
 
 		// Parses the highlight rules text into a new list; the current settings are left alone (also when the text is invalid).
@@ -83,5 +95,6 @@ namespace WebCrawler;
 			comboBoxDepth.SelectedIndex = comboBoxDepth.FindStringExact(Settings.Instance.MaxDepth.ToString());
 			textBoxHighlight.Text = String.Join(Environment.NewLine, Settings.Instance.HighlightRules.Select(x => x.Expression + " => " + x.HighlightColor));
         textBoxIgnore.Text = String.Join(Environment.NewLine, Settings.Instance.ExcludeRules);
+			textBoxCookies.Text = Settings.Instance.Cookies;
 		}
 }

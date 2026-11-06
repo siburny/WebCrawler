@@ -43,6 +43,9 @@ public sealed class Settings
     /// <summary>The User-Agent header to send. Empty = the program's own (see <see cref="CrawlOptions.DefaultUserAgent"/>).</summary>
     public string UserAgent { get; set; }
 
+    /// <summary>Cookies sent with every request: one NAME=VALUE per line (see <see cref="CookieList"/>). Empty = none.</summary>
+    public string Cookies { get; set; }
+
     [JsonConstructor]
     private Settings()
     {
@@ -56,6 +59,7 @@ public sealed class Settings
         HighlightRules = new List<SettingsHighlightRule>();
         RequestDelayMs = 250;
         UserAgent = "";
+        Cookies = "";
     }
 
     /// <summary>
@@ -121,6 +125,7 @@ public sealed class Settings
             loaded.ExcludeRules = loaded.ExcludeRules ?? new List<string>();
             loaded.HighlightRules = loaded.HighlightRules ?? new List<SettingsHighlightRule>();
             loaded.UserAgent = loaded.UserAgent ?? "";
+            loaded.Cookies = loaded.Cookies ?? "";
             Instance = loaded;
             return true;
         }

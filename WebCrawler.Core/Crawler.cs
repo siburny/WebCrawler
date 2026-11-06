@@ -22,6 +22,7 @@ public sealed class Crawler : IDisposable
 
     // One client for every worker (and every crawl): it owns the connection pool. Cookies and automatic
     // decompression are off, so no session state leaks from one URL to the next and sizes are the on-the-wire sizes.
+    // The only cookies sent are the predefined ones of the settings, as a plain Cookie header (see SendAsync).
     private static readonly HttpClient Http = CreateHttpClient();
 
     private readonly URLCollection _collection;
@@ -329,7 +330,7 @@ public sealed class Crawler : IDisposable
 
     /// <summary>
     /// Sends one request once it is this site's turn (see <see cref="CrawlOptions.RequestDelay"/>), identifying the
-    /// program in the User-Agent header. The time spent waiting for the turn is taken off <paramref name="timer"/>.
+    /// program in the User-Agent header and carrying the predefined cookies in the Cookie header. The time spent waiting for the turn is taken off <paramref name="timer"/>.
     /// </summary>
     private async Task<HttpResponseMessage> SendAsync(Uri uri, HttpMethod method, System.Diagnostics.Stopwatch timer, CancellationToken token)
     {
@@ -346,6 +347,8 @@ public sealed class Crawler : IDisposable
         HttpRequestMessage request = new(method, uri);
         // Not validated: whatever the user typed in the settings is sent as it is.
         request.Headers.TryAddWithoutValidation("User-Agent", _options.UserAgent);
+        if (_options.CookieHeader.Length > 0)
+            request.Headers.TryAddWithoutValidation("Cookie", _options.CookieHeader);
         return await Http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false);
     }
 

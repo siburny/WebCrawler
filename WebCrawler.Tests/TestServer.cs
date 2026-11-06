@@ -37,7 +37,7 @@ public sealed class TestServer : IAsyncLifetime
     /// <summary>Every request received, as "METHOD /path".</summary>
     public ConcurrentQueue<string> Requests { get; } = new ConcurrentQueue<string>();
 
-    /// <summary>Every request received, with the moment it arrived and the User-Agent it carried.</summary>
+    /// <summary>Every request received, with the moment it arrived and the User-Agent and Cookie headers it carried.</summary>
     public ConcurrentQueue<RecordedRequest> Log { get; } = new ConcurrentQueue<RecordedRequest>();
 
     public async Task InitializeAsync()
@@ -63,7 +63,7 @@ public sealed class TestServer : IAsyncLifetime
     {
         string path = c.Request.Path.Value;
         Requests.Enqueue(c.Request.Method + " " + path);
-        Log.Enqueue(new RecordedRequest(c.Request.Method, path, c.Request.Headers.UserAgent.ToString(), Stopwatch.GetTimestamp()));
+        Log.Enqueue(new RecordedRequest(c.Request.Method, path, c.Request.Headers.UserAgent.ToString(), Stopwatch.GetTimestamp(), c.Request.Headers.Cookie.ToString()));
 
         // Some servers answer HEAD with "method not allowed" although GET works.
         if (c.Request.Method == "HEAD" && path == "/headfail")
@@ -171,4 +171,4 @@ public sealed class TestServer : IAsyncLifetime
 }
 
 /// <summary>One request as the scripted server saw it.</summary>
-public sealed record RecordedRequest(string Method, string Path, string UserAgent, long Timestamp);
+public sealed record RecordedRequest(string Method, string Path, string UserAgent, long Timestamp, string Cookie);

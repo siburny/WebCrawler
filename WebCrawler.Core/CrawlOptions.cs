@@ -20,6 +20,9 @@ public sealed class CrawlOptions
     /// <summary>The User-Agent header sent with every request.</summary>
     public string UserAgent { get; }
 
+    /// <summary>The Cookie header sent with every request (the predefined cookies of the settings). Empty = none.</summary>
+    public string CookieHeader { get; }
+
     /// <summary>What the program calls itself when the settings name nothing else. Many sites refuse requests that have no User-Agent.</summary>
     public static string DefaultUserAgent { get; } = CreateDefaultUserAgent();
 
@@ -37,6 +40,8 @@ public sealed class CrawlOptions
         HighlightRules = (settings.HighlightRules ?? new List<SettingsHighlightRule>()).ToArray();
         RequestDelay = TimeSpan.FromMilliseconds(Math.Max(0, settings.RequestDelayMs));
         UserAgent = string.IsNullOrWhiteSpace(settings.UserAgent) ? DefaultUserAgent : settings.UserAgent.Trim();
+        // The Settings dialog refuses unusable entries, so only a hand-edited config file can have any; those are left out.
+        CookieHeader = CookieList.ToHeader(CookieList.Parse(settings.Cookies, out _));
     }
 
     private static string CreateDefaultUserAgent()

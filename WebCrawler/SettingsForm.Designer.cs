@@ -37,11 +37,13 @@
             this.textBoxIgnore = new System.Windows.Forms.TextBox();
             this.textBoxHighlight = new System.Windows.Forms.TextBox();
             this.label4 = new System.Windows.Forms.Label();
+            this.label5 = new System.Windows.Forms.Label();
+            this.textBoxCookies = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // buttonClose
             // 
-            this.buttonClose.Location = new System.Drawing.Point(649, 358);
+            this.buttonClose.Location = new System.Drawing.Point(649, 466);
             this.buttonClose.Name = "buttonClose";
             this.buttonClose.Size = new System.Drawing.Size(75, 23);
             this.buttonClose.TabIndex = 0;
@@ -151,11 +153,31 @@
             this.label4.TabIndex = 7;
             this.label4.Text = "Highligh list:";
             // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(12, 358);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(270, 13);
+            this.label5.TabIndex = 9;
+            this.label5.Text = "Cookies sent with every request (one NAME=VALUE per line):";
+            // 
+            // textBoxCookies
+            // 
+            this.textBoxCookies.Location = new System.Drawing.Point(15, 375);
+            this.textBoxCookies.Multiline = true;
+            this.textBoxCookies.Name = "textBoxCookies";
+            this.textBoxCookies.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.textBoxCookies.Size = new System.Drawing.Size(709, 80);
+            this.textBoxCookies.TabIndex = 10;
+            // 
             // SettingsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
-            this.ClientSize = new System.Drawing.Size(735, 391);
+            this.ClientSize = new System.Drawing.Size(735, 499);
+            this.Controls.Add(this.textBoxCookies);
+            this.Controls.Add(this.label5);
             this.Controls.Add(this.textBoxHighlight);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.textBoxIgnore);
@@ -185,5 +207,7 @@
 		private System.Windows.Forms.TextBox textBoxIgnore;
 		private System.Windows.Forms.TextBox textBoxHighlight;
 		private System.Windows.Forms.Label label4;
+		private System.Windows.Forms.Label label5;
+		private System.Windows.Forms.TextBox textBoxCookies;
 	}
 }

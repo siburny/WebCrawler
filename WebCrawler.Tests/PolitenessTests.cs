@@ -114,7 +114,7 @@ public class CrawlOptionsTests
 [Collection("Settings")]
 public class PolitenessTests
 {
-    private static async Task<(TestServer Server, Crawl Crawl)> RunAsync(Action<Settings> configure, string path)
+    internal static async Task<(TestServer Server, Crawl Crawl)> RunAsync(Action<Settings> configure, string path)
     {
         Settings settings = Settings.CreateDefaults();
         configure(settings);
@@ -129,7 +129,7 @@ public class PolitenessTests
         return (server, crawl);
     }
 
-    private static async Task CleanUpAsync(TestServer server, Crawl crawl)
+    internal static async Task CleanUpAsync(TestServer server, Crawl crawl)
     {
         crawl.Dispose();
         await server.DisposeAsync();

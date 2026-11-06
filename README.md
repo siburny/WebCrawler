@@ -66,6 +66,7 @@ settings), otherwise in `%AppData%\WebCrawler\config.json`.
 | `QuickScan` | false | Use `HEAD` requests only. |
 | `RequestDelayMs` | 250 | Least time in milliseconds between two requests to the same site, however many connections are used (250 = at most 4 requests per second). 0 removes the limit. |
 | `UserAgent` | empty | The `User-Agent` header to send. Empty means `Mozilla/5.0 (compatible; WebCrawler/<version>)`. |
+| `Cookies` | empty | Cookies sent with every request, one `NAME=VALUE` per line (a pasted `a=1; b=2` works too). Set in the Settings window; stored as plain text in the config file. |
 | `ExcludeRules` | none | Texts; addresses containing one are skipped (case-sensitive). |
 | `HighlightRules` | none | `Expression` (regular expression, case-insensitive) and `HighlightColor` (for example `0xff8000`). |
 

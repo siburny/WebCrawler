@@ -72,6 +72,7 @@ public sealed class SettingsTests : IDisposable
         s.QuickScan = true;
         s.RequestDelayMs = 1500;
         s.UserAgent = "MyChecker/2.0";
+        s.Cookies = "session=abc123\r\ntheme=dark";
         s.ExcludeRules = new List<string> { "/logout", "café \"quoted\"" };
         s.HighlightRules = new List<SettingsHighlightRule> { new SettingsHighlightRule { Expression = "foo.*bar", HighlightColor = "0x00ff00" } };
         s.Save();
@@ -86,6 +87,7 @@ public sealed class SettingsTests : IDisposable
         Assert.True(loaded.QuickScan);
         Assert.Equal(1500, loaded.RequestDelayMs);
         Assert.Equal("MyChecker/2.0", loaded.UserAgent);
+        Assert.Equal("session=abc123\r\ntheme=dark", loaded.Cookies);
         Assert.Equal(new[] { "/logout", "café \"quoted\"" }, loaded.ExcludeRules);
         Assert.Single(loaded.HighlightRules);
         Assert.True(loaded.HighlightRules[0].IsMatch("xxFOOyyBARzz"));
@@ -186,6 +188,16 @@ public sealed class SettingsTests : IDisposable
         Assert.Empty(Settings.Instance.HighlightRules);
         Assert.Equal(250, Settings.Instance.RequestDelayMs);
         Assert.Equal("", Settings.Instance.UserAgent);
+        Assert.Equal("", Settings.Instance.Cookies);
+    }
+
+    [Fact]
+    public void NullCookiesInTheFileMeanNoCookies()
+    {
+        WriteUserJson("{\"Cookies\":null}");
+
+        Assert.True(Settings.Instance.Load());
+        Assert.Equal("", Settings.Instance.Cookies);
     }
 
     [Fact]
