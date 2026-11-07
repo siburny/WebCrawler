@@ -5,18 +5,22 @@
   <Application.Resources>
     <ResourceDictionary>
       <ResourceDictionary.ThemeDictionaries>
-        <!-- Selected rows use the Base blue rather than the (orange/red) accent, so row text stays readable. -->
+        <!-- Selected rows use the Base blue rather than the accent, so row text stays readable. -->
         <ResourceDictionary x:Key="Light">
-          <SolidColorBrush x:Key="DataGridRowSelectedBackgroundBrush" Color="#A9D3EE" />
-          <SolidColorBrush x:Key="DataGridRowSelectedHoveredBackgroundBrush" Color="#9ACBEA" />
-          <SolidColorBrush x:Key="DataGridRowSelectedUnfocusedBackgroundBrush" Color="#B9DDF3" />
-          <SolidColorBrush x:Key="DataGridRowSelectedHoveredUnfocusedBackgroundBrush" Color="#AED6F0" />
+          <SolidColorBrush x:Key="DataGridRowSelectedBackgroundBrush" Color="#B7C4D5" />
+          <SolidColorBrush x:Key="DataGridRowSelectedHoveredBackgroundBrush" Color="#A4B4C8" />
+          <SolidColorBrush x:Key="DataGridRowSelectedUnfocusedBackgroundBrush" Color="#C6D0DD" />
+          <SolidColorBrush x:Key="DataGridRowSelectedHoveredUnfocusedBackgroundBrush" Color="#BCC8D7" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
-          <SolidColorBrush x:Key="DataGridRowSelectedBackgroundBrush" Color="#0B4948" />
-          <SolidColorBrush x:Key="DataGridRowSelectedHoveredBackgroundBrush" Color="#0B5351" />
-          <SolidColorBrush x:Key="DataGridRowSelectedUnfocusedBackgroundBrush" Color="#0A3D3D" />
-          <SolidColorBrush x:Key="DataGridRowSelectedHoveredUnfocusedBackgroundBrush" Color="#0B4948" />
+          <SolidColorBrush x:Key="DataGridRowSelectedBackgroundBrush" Color="#2E4363" />
+          <SolidColorBrush x:Key="DataGridRowSelectedHoveredBackgroundBrush" Color="#3A506B" />
+          <SolidColorBrush x:Key="DataGridRowSelectedUnfocusedBackgroundBrush" Color="#263556" />
+          <SolidColorBrush x:Key="DataGridRowSelectedHoveredUnfocusedBackgroundBrush" Color="#2E4363" />
+          <!-- The dark accent is light, so accent buttons use dark text. -->
+          <SolidColorBrush x:Key="AccentButtonForeground" Color="#0B132B" />
+          <SolidColorBrush x:Key="AccentButtonForegroundPointerOver" Color="#0B132B" />
+          <SolidColorBrush x:Key="AccentButtonForegroundPressed" Color="#0B132B" />
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>
@@ -24,33 +28,34 @@
   <Application.Styles>
     <FluentTheme>
       <FluentTheme.Palettes>
-        <!-- Region = window background, Base = chrome (headers, borders, buttons), Primary = accent. -->
-        <ColorPaletteResources x:Key="Light" Accent="#CC4D11"
-                               RegionColor="#CFEAFF"
-                               AltHigh="#EAF5FF"
-                               AltMedium="#EAF5FF"
-                               AltMediumHigh="#EAF5FF"
-                               AltMediumLow="#EAF5FF"
-                               AltLow="#EAF5FF"
-                               ChromeLow="#BFE0F5"
-                               ChromeMediumLow="#AFD7F0"
-                               ChromeMedium="#9ACBEA"
-                               ChromeHigh="#7CBEE0"
-                               ListLow="#BCDDF3"
-                               ListMedium="#A9D3EE" />
-        <ColorPaletteResources x:Key="Dark" Accent="#00A9A5"
-                               RegionColor="#092327"
-                               AltHigh="#061A1D"
-                               AltMedium="#061A1D"
-                               AltMediumHigh="#061A1D"
-                               AltMediumLow="#061A1D"
-                               AltLow="#061A1D"
-                               ChromeLow="#0B2F31"
-                               ChromeMediumLow="#0B3D3C"
-                               ChromeMedium="#0B4948"
-                               ChromeHigh="#0B5351"
-                               ListLow="#0C3033"
-                               ListMedium="#0B4140" />
+        <!-- Dark: Space Indigo #1C2541 background, Prussian Blue #0B132B inputs/header, Dusk Blue #3A506B chrome, with a lighter
+             Dusk Blue #9DB8DB accent. Light: tints of Dusk Blue, accent Dusk Blue. -->
+        <ColorPaletteResources x:Key="Light" Accent="#3A506B"
+                               RegionColor="#E1E7EF"
+                               AltHigh="#F3F6FA"
+                               AltMedium="#F3F6FA"
+                               AltMediumHigh="#F3F6FA"
+                               AltMediumLow="#F3F6FA"
+                               AltLow="#F3F6FA"
+                               ChromeLow="#D0D9E5"
+                               ChromeMediumLow="#C0CCDB"
+                               ChromeMedium="#A4B4C8"
+                               ChromeHigh="#8497AE"
+                               ListLow="#CCD5E2"
+                               ListMedium="#B7C4D5" />
+        <ColorPaletteResources x:Key="Dark" Accent="#9DB8DB"
+                               RegionColor="#1C2541"
+                               AltHigh="#0B132B"
+                               AltMedium="#0B132B"
+                               AltMediumHigh="#0B132B"
+                               AltMediumLow="#0B132B"
+                               AltLow="#0B132B"
+                               ChromeLow="#243050"
+                               ChromeMediumLow="#2B3A5C"
+                               ChromeMedium="#334766"
+                               ChromeHigh="#3A506B"
+                               ListLow="#222D4C"
+                               ListMedium="#2E3F5E" />
       </FluentTheme.Palettes>
     </FluentTheme>
     <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
