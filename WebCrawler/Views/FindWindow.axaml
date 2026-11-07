@@ -1,0 +1,23 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:WebCrawler.ViewModels"
+        x:Class="WebCrawler.Views.FindWindow"
+        x:DataType="vm:FindViewModel"
+        Title="Find"
+        Width="340" Height="130" CanResize="False" ShowInTaskbar="False"
+        WindowStartupLocation="Manual">
+  <Grid RowDefinitions="Auto,Auto,Auto,*" ColumnDefinitions="*,Auto" Margin="12" RowSpacing="6">
+    <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Find what:" />
+    <TextBox Grid.Row="1" Name="SearchBox" Text="{Binding SearchText}" Margin="0,0,10,0">
+      <TextBox.KeyBindings>
+        <KeyBinding Gesture="Enter" Command="{Binding FindNextCommand}" />
+      </TextBox.KeyBindings>
+    </TextBox>
+    <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+      <Button Content="Find Next" Command="{Binding FindNextCommand}" MinWidth="88" HorizontalContentAlignment="Center" />
+    </StackPanel>
+    <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Text="{Binding StatusText}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" TextTrimming="CharacterEllipsis" />
+    <Button Grid.Row="3" Grid.Column="1" Name="CloseButton" Content="Close" MinWidth="76"
+            HorizontalContentAlignment="Center" VerticalAlignment="Bottom" IsCancel="True" />
+  </Grid>
+</Window>

@@ -2,26 +2,32 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
-    <UseWindowsForms>true</UseWindowsForms>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>WebCrawler</RootNamespace>
     <AssemblyName>WebCrawler</AssemblyName>
-    <StartupObject>WebCrawler.Program</StartupObject>
-    <ImplicitUsings>disable</ImplicitUsings>
-    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
     <Product>WebCrawler</Product>
     <Copyright>Copyright © 2009</Copyright>
     <Version>1.0.0</Version>
-    <!-- Read by the generated ApplicationConfiguration.Initialize(): sharp text and correct sizes on every monitor, at any scaling. -->
-    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
-    <ApplicationVisualStyles>true</ApplicationVisualStyles>
-    <ApplicationUseCompatibleTextRendering>false</ApplicationUseCompatibleTextRendering>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.5" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.5" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.5" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.1.2" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\WebCrawler.Core\WebCrawler.Core.csproj" />
   </ItemGroup>
 
-  <!-- Keeps the Visual Studio resource designer wired to the generated Resources class. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="WebCrawler.Tests" />
+  </ItemGroup>
 
 </Project>

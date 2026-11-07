@@ -1,0 +1,37 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:WebCrawler.ViewModels"
+        x:Class="WebCrawler.Views.SettingsWindow"
+        x:DataType="vm:SettingsViewModel"
+        Title="Settings"
+        Width="760" Height="560" MinWidth="560" MinHeight="460"
+        ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
+  <Grid RowDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto" ColumnDefinitions="*,*" Margin="14" RowSpacing="8" ColumnSpacing="14">
+    <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="10">
+      <TextBlock Text="Number of threads:" VerticalAlignment="Center" Width="140" />
+      <ComboBox ItemsSource="{Binding ThreadChoices}" SelectedItem="{Binding Threads}" MinWidth="80" />
+    </StackPanel>
+    <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="10">
+      <TextBlock Text="Depth of scanning:" VerticalAlignment="Center" Width="140" />
+      <ComboBox ItemsSource="{Binding DepthChoices}" SelectedItem="{Binding Depth}" MinWidth="80" />
+    </StackPanel>
+
+    <TextBlock Grid.Row="2" Grid.Column="0" Text="Ignore list:" />
+    <TextBlock Grid.Row="2" Grid.Column="1" Text="Highlight list:" />
+    <TextBox Grid.Row="3" Grid.Column="0" Text="{Binding IgnoreText}" AcceptsReturn="True" TextWrapping="NoWrap"
+             ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
+             ToolTip.Tip="Addresses containing one of these texts are skipped (one text per line)." />
+    <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding HighlightText}" AcceptsReturn="True" TextWrapping="NoWrap"
+             ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
+             ToolTip.Tip="One rule per line: regular expression => colour, for example  error => 0xff8000" />
+
+    <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Text="Cookies sent with every request (one NAME=VALUE per line):" />
+    <TextBox Grid.Row="5" Grid.ColumnSpan="2" Text="{Binding CookiesText}" AcceptsReturn="True" Height="90" TextWrapping="NoWrap"
+             ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto" />
+
+    <StackPanel Grid.Row="6" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,6,0,0">
+      <Button Name="SaveButton" Classes="accent" Content="Save" MinWidth="80" HorizontalContentAlignment="Center" IsDefault="True" />
+      <Button Name="CancelButton" Content="Cancel" MinWidth="80" HorizontalContentAlignment="Center" IsCancel="True" />
+    </StackPanel>
+  </Grid>
+</Window>

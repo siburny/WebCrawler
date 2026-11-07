@@ -1,0 +1,12 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="WebCrawler.Views.MessageWindow"
+        Title="Web Crawler"
+        SizeToContent="WidthAndHeight" MaxWidth="560" MinWidth="300"
+        CanResize="False" ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+  <StackPanel Margin="20" Spacing="18">
+    <TextBlock Name="MessageText" TextWrapping="Wrap" />
+    <Button Name="OkButton" Content="OK" HorizontalAlignment="Right" MinWidth="80" HorizontalContentAlignment="Center" IsDefault="True" />
+  </StackPanel>
+</Window>

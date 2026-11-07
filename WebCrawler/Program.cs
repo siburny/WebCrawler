@@ -1,6 +1,5 @@
-﻿using System;
 using System.Runtime.InteropServices;
-using System.Windows.Forms;
+using Avalonia;
 
 namespace WebCrawler;
 
@@ -8,18 +7,28 @@ static class Program
 {
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    static extern bool FreeConsole();
+    private static extern bool FreeConsole();
+
+    /// <summary>The command-line arguments, read by the main window when it opens.</summary>
+    public static string[] Args { get; private set; } = Array.Empty<string>();
 
     [STAThread]
-    static void Main(string[] args)
+    public static void Main(string[] args)
     {
-        if (args.Length == 0)
-        {
-            FreeConsole();
-        }
+        Args = args;
 
-        // Visual styles, text rendering and high-DPI mode come from the project file (see WebCrawler.csproj).
-        ApplicationConfiguration.Initialize();
-        Application.Run(new MainForm(args));
+        // On Windows the program is a console program (so "-o console" can print), which opens a console window;
+        // it is closed again unless the program was started with arguments. Other systems have nothing to close.
+        if (args.Length == 0 && OperatingSystem.IsWindows())
+            FreeConsole();
+
+        BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+    }
+
+    public static AppBuilder BuildAvaloniaApp()
+    {
+        return AppBuilder.Configure<App>()
+            .UsePlatformDetect()
+            .LogToTrace();
     }
 }

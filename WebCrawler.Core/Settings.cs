@@ -75,12 +75,24 @@ public sealed class Settings
             if (File.Exists(portable))
                 return portable;
 
-            // Option.Create: without it the folder name comes back empty when the folder does not exist yet.
-            string appData = UserDataDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.Create);
+            string appData = UserDataDirectory ?? DefaultUserDataDirectory();
             if (string.IsNullOrEmpty(appData))
                 return portable;
             return Path.Combine(appData, "WebCrawler", FileName);
         }
+    }
+
+    // %AppData% on Windows, ~/Library/Application Support on macOS, $XDG_CONFIG_HOME (default ~/.config) on Linux.
+    private static string DefaultUserDataDirectory()
+    {
+        if (OperatingSystem.IsMacOS())
+        {
+            string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            return string.IsNullOrEmpty(home) ? "" : Path.Combine(home, "Library", "Application Support");
+        }
+
+        // Option.Create: without it the folder name comes back empty when the folder does not exist yet.
+        return Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.Create);
     }
 
     public void Save()
