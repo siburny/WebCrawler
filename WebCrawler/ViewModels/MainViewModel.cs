@@ -39,6 +39,9 @@ public partial class MainViewModel : ObservableObject
 
     public FindViewModel Find { get; }
 
+    /// <summary>The last starting addresses a scan was started from, newest first (the URL box's dropdown).</summary>
+    public ObservableCollection<string> RecentUrls { get; } = new();
+
     /// <summary>The grid's rows, one per address, in the same order as the crawl's list.</summary>
     public ObservableCollection<UrlRow> Rows { get; } = new();
 
@@ -64,6 +67,9 @@ public partial class MainViewModel : ObservableObject
     {
         if (!Settings.Instance.Load())
             Settings.Instance.Save();
+
+        foreach (string url in Settings.Instance.RecentUrls)
+            RecentUrls.Add(url);
 
         await ParseArgumentsAsync(args);
         refreshTimer.Start();
@@ -121,6 +127,8 @@ public partial class MainViewModel : ObservableObject
             await ShowMessage("Please enter an absolute URL starting with http:// or https://");
             return;
         }
+
+        RememberUrl(text);
 
         if (collection.Count() > 0)
             ResetCollection();
@@ -340,7 +348,37 @@ public partial class MainViewModel : ObservableObject
         }
 
         if (urlArg != "")
+        {
             UrlText = urlArg;
+            if (URLCollection.TryParseCrawlUri(urlArg, out _))
+                RememberUrl(urlArg);
+        }
+    }
+
+    // Keeps the address in the dropdown (newest first, at most Settings.MaxRecentUrls) and in the settings file.
+    private void RememberUrl(string url)
+    {
+        Settings settings = Settings.Instance;
+        settings.AddRecentUrl(url);
+
+        // Changed in place (not rebuilt) so the editable URL box keeps its text.
+        string newest = settings.RecentUrls[0];
+        int index = RecentUrls.IndexOf(newest);
+        if (index > 0)
+            RecentUrls.Move(index, 0);
+        else if (index < 0)
+            RecentUrls.Insert(0, newest);
+        while (RecentUrls.Count > Settings.MaxRecentUrls)
+            RecentUrls.RemoveAt(RecentUrls.Count - 1);
+
+        try
+        {
+            settings.Save();
+        }
+        catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+        {
+            // Not being able to save the history must not get in the way of the scan.
+        }
     }
 
     private void AddUrlsFromFile(string path)

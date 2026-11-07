@@ -223,4 +223,57 @@ public sealed class SettingsTests : IDisposable
         Assert.Contains("\"MaxDepth\": 8", File.ReadAllText(PortablePath));
         Assert.Equal("{\"MaxDepth\":2}", File.ReadAllText(JsonPath));
     }
+
+    [Fact]
+    public void RecentUrlsKeepTheNewestTenWithoutDuplicates()
+    {
+        Settings s = Settings.Instance;
+        for (int i = 1; i <= 12; i++)
+            s.AddRecentUrl("https://example.com/" + i);
+
+        Assert.Equal(Settings.MaxRecentUrls, s.RecentUrls.Count);
+        Assert.Equal("https://example.com/12", s.RecentUrls[0]);
+        Assert.Equal("https://example.com/3", s.RecentUrls[9]);
+
+        // An address that is used again moves to the top instead of appearing twice.
+        s.AddRecentUrl("https://example.com/5");
+        Assert.Equal(10, s.RecentUrls.Count);
+        Assert.Equal("https://example.com/5", s.RecentUrls[0]);
+        Assert.Equal("https://example.com/12", s.RecentUrls[1]);
+        Assert.Single(s.RecentUrls, u => u == "https://example.com/5");
+
+        // Blanks are ignored and surrounding spaces do not make an address different.
+        s.AddRecentUrl("   ");
+        s.AddRecentUrl("  https://example.com/5  ");
+        Assert.Equal(10, s.RecentUrls.Count);
+        Assert.Equal("https://example.com/5", s.RecentUrls[0]);
+    }
+
+    [Fact]
+    public void RecentUrlsAreSavedAndLoaded()
+    {
+        Settings.Instance.AddRecentUrl("https://a.example/");
+        Settings.Instance.AddRecentUrl("https://b.example/");
+        Settings.Instance.Save();
+
+        Settings.Instance = Settings.CreateDefaults();
+        Assert.True(Settings.Instance.Load());
+        Assert.Equal(new[] { "https://b.example/", "https://a.example/" }, Settings.Instance.RecentUrls);
+    }
+
+    [Fact]
+    public void BrokenRecentUrlsInTheFileAreCleanedUp()
+    {
+        string many = string.Join(",", Enumerable.Range(1, 15).Select(i => "\"https://x.example/" + i + "\""));
+        WriteUserJson("{\"RecentUrls\":[\"\", \" \", \"https://x.example/1\", \"https://x.example/1\", " + many + "]}");
+
+        Assert.True(Settings.Instance.Load());
+        Assert.Equal(Settings.MaxRecentUrls, Settings.Instance.RecentUrls.Count);
+        Assert.Equal("https://x.example/1", Settings.Instance.RecentUrls[0]);
+        Assert.Equal("https://x.example/9", Settings.Instance.RecentUrls[8]);
+
+        WriteUserJson("{\"RecentUrls\":null}");
+        Assert.True(Settings.Instance.Load());
+        Assert.Empty(Settings.Instance.RecentUrls);
+    }
 }

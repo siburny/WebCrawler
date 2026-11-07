@@ -47,11 +47,13 @@
     <!-- URL box -->
     <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="8,6">
       <TextBlock Grid.Column="0" Text="URL:" VerticalAlignment="Center" Margin="0,0,8,0" />
-      <TextBox Grid.Column="1" Name="UrlBox" Text="{Binding UrlText}">
-        <TextBox.KeyBindings>
+      <!-- Editable dropdown: type an address or pick one of the last ten that were scanned. -->
+      <ComboBox Grid.Column="1" Name="UrlBox" IsEditable="True" HorizontalAlignment="Stretch"
+                Text="{Binding UrlText, Mode=TwoWay}" ItemsSource="{Binding RecentUrls}">
+        <ComboBox.KeyBindings>
           <KeyBinding Gesture="Enter" Command="{Binding StartNewScanCommand}" />
-        </TextBox.KeyBindings>
-      </TextBox>
+        </ComboBox.KeyBindings>
+      </ComboBox>
       <Button Grid.Column="2" Classes="accent" Margin="8,0,0,0" MinWidth="115" HorizontalContentAlignment="Center"
               Content="{Binding StartStopText}" Command="{Binding StartStopCommand}" />
     </Grid>

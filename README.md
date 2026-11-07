@@ -12,6 +12,7 @@ status, HTTP code, content type, size and response time, so broken links, redire
   not read, so no links are followed.
 - **Ignore list:** addresses containing one of these texts are listed as skipped and never requested.
 - **Highlight list:** regular expressions matched against the page text; matching rows get your colour.
+- **URL history:** the URL box is a dropdown of the last 10 starting addresses you scanned (kept in the settings file).
 - Several measurements per address, to average out response times.
 - Saves a report as CSV (`.csv`), tab-separated text (any other extension) or prints it to the console.
 - **Find:** `Ctrl+F` (or the **Find** button) opens a small window that stays open while you search the list. **Find Next** selects the next row that contains all the words you typed (in the address, notes, content type, status or HTTP code), ignoring case, and starts again from the top after the last row.
@@ -107,6 +108,7 @@ settings), otherwise in the user's settings folder:
 | `RequestDelayMs` | 250 | Least time in milliseconds between two requests to the same site, however many connections are used (250 = at most 4 requests per second). 0 removes the limit. |
 | `UserAgent` | empty | The `User-Agent` header to send. Empty means `Mozilla/5.0 (compatible; WebCrawler/<version>)`. |
 | `Cookies` | empty | Cookies sent with every request, one `NAME=VALUE` per line (a pasted `a=1; b=2` works too). Set in the Settings window; stored as plain text in the config file. |
+| `RecentUrls` | none | The last 10 starting addresses a scan was started from, newest first. They fill the dropdown of the URL box; the program keeps this list itself. |
 | `ExcludeRules` | none | Texts; addresses containing one are skipped (case-sensitive). |
 | `HighlightRules` | none | `Expression` (regular expression, case-insensitive) and `HighlightColor` (for example `0xff8000`). |
 

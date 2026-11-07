@@ -18,6 +18,9 @@ public sealed class Settings
 
     private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions { WriteIndented = true };
 
+    /// <summary>How many starting addresses <see cref="RecentUrls"/> keeps.</summary>
+    public const int MaxRecentUrls = 10;
+
     public static Settings Instance = new Settings();
 
     // Where the program lives and where per-user data goes. Only tests change these, so they never touch the real settings.
@@ -46,6 +49,22 @@ public sealed class Settings
     /// <summary>Cookies sent with every request: one NAME=VALUE per line (see <see cref="CookieList"/>). Empty = none.</summary>
     public string Cookies { get; set; }
 
+    /// <summary>The last addresses a scan was started from, newest first, at most <see cref="MaxRecentUrls"/>.</summary>
+    public List<string> RecentUrls { get; set; }
+
+    /// <summary>Puts an address at the top of <see cref="RecentUrls"/> (an address already in the list moves up) and drops the oldest beyond the limit.</summary>
+    public void AddRecentUrl(string url)
+    {
+        url = url.Trim();
+        if (url.Length == 0)
+            return;
+
+        RecentUrls.RemoveAll(u => string.Equals(u, url, StringComparison.Ordinal));
+        RecentUrls.Insert(0, url);
+        if (RecentUrls.Count > MaxRecentUrls)
+            RecentUrls.RemoveRange(MaxRecentUrls, RecentUrls.Count - MaxRecentUrls);
+    }
+
     [JsonConstructor]
     private Settings()
     {
@@ -60,6 +79,7 @@ public sealed class Settings
         RequestDelayMs = 250;
         UserAgent = "";
         Cookies = "";
+        RecentUrls = new List<string>();
     }
 
     /// <summary>
@@ -138,6 +158,9 @@ public sealed class Settings
             loaded.HighlightRules = loaded.HighlightRules ?? new List<SettingsHighlightRule>();
             loaded.UserAgent = loaded.UserAgent ?? "";
             loaded.Cookies = loaded.Cookies ?? "";
+            loaded.RecentUrls = (loaded.RecentUrls ?? new List<string>())
+                .Where(u => !string.IsNullOrWhiteSpace(u)).Select(u => u.Trim()).Distinct(StringComparer.Ordinal)
+                .Take(MaxRecentUrls).ToList();
             Instance = loaded;
             return true;
         }
